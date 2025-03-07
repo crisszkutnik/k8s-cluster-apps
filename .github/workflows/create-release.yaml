@@ -1,0 +1,42 @@
+name: Create release
+
+on:
+  push:
+    tags:
+      - "*-v[0-9]+.[0-9]+.[0-9]+"
+
+env:
+  DIRECTORY: ""
+  SEMVER: ""
+
+jobs:
+  parse-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      PROJECT_NAME: ${{ steps.extract-project-name.outputs.PROJECT_NAME }}
+      SEMVER: ${{ steps.extract-image-version.outputs.SEMVER }}
+    steps:
+      - name: Get project name from tag
+        id: extract-project-name
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          PROJECT_NAME="${TAG%%-v*}"
+          echo "PROJECT_NAME is $PROJECT_NAME"
+          echo "::set-output name=PROJECT_NAME::$PROJECT_NAME"
+      - name: Get image version from tag
+        id: extract-image-version
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          SEMVER="${TAG#*-v}"
+          echo "SEMVER is $SEMVER"
+          echo "::set-output name=SEMVER::$SEMVER"
+  create-release:
+    needs: parse-tag
+    uses: crisszkutnik/gh-actions/.github/workflows/create-release.yaml@main
+    permissions:
+      contents: write
+      packages: write
+    with:
+      IMAGE_NAME: "crisszkutnik/${{ needs.parse-tag.outputs.PROJECT_NAME }}"
+      IMAGE_VERSION: ${{ needs.parse-tag.outputs.SEMVER }}
+      DIRECTORY: ${{ needs.parse-tag.outputs.PROJECT_NAME }}

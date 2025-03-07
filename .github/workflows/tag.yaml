@@ -1,0 +1,40 @@
+name: Create tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      project-name:
+        description: "The project that will be tagged"
+        type: choice
+        required: true
+        options:
+          - lambda-health-checker
+      semver:
+        description: "The tag version it is going to be created. Please make sure version number starts with 'v' (for example: v1.0.0, v2.1.2, etc.)"
+        required: true
+        type: string
+
+jobs:
+  prerequisites:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Verify project exists
+        run: |
+          DIR=${{ inputs.project-name }}
+
+          if [ ! -d "$DIR" ]; then
+            echo "Project ${DIR} does not exist"
+            exit 1
+          fi
+  tag:
+    needs: prerequisites
+    uses: crisszkutnik/gh-actions/.github/workflows/tag.yaml@main
+    permissions:
+      contents: write
+    with:
+      semver: ${{ inputs.semver }}
+      tag_prefix: ${{ inputs.project-name }}
+    secrets:
+      ACTIONS_PERSONAL_ACCESS_TOKEN: ${{ secrets.ACTIONS_PERSONAL_ACCESS_TOKEN }}
