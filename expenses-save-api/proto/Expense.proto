@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "./internal/proto";
+
+service Expenses {
+  rpc AddExpense (NewExpenseRequest) returns (ExpenseReply) {}
+}
+
+message NewExpenseRequest {
+  string name = 1;
+  string paymentMethod = 2;
+  string currency = 3;
+  int32 amount = 4;
+  string category = 5;
+  string subcategory = 6;
+  string date = 7;
+}
+
+message ExpenseReply {
+  bool success = 1;
+  string message = 2;
+}
