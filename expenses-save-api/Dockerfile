@@ -19,6 +19,7 @@ FROM alpine:3.20
 
 WORKDIR /app
 
+RUN apk add --no-cache tzdata
 COPY --from=builder /app/dist/expenses-save-api /app/expenses-save-api
 
 EXPOSE 3000

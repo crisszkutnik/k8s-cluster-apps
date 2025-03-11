@@ -27,15 +27,17 @@ func NewSheetsService() (*SheetsService, error) {
 }
 
 func (s *SheetsService) AppendRow(row *[]interface{}) error {
+	log.Printf("appending row: %v", row)
+
 	_, err := s.srv.Spreadsheets.Values.Append(*env.SPREADSHEET_ID, "Formulario Gastos!A:A", &sheets.ValueRange{
 		Values: [][]interface{}{*row},
 	}).ValueInputOption("USER_ENTERED").Do()
 
-	log.Printf("appended row: %v", row)
-
 	if err != nil {
 		return err
 	}
+
+	log.Println("row appended succesfully")
 
 	return nil
 }

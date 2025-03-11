@@ -18,5 +18,6 @@ func main() {
 
 	grpcServer := grpcserver.NewGrpcServer(sheetsService)
 
+	log.Println("starting server")
 	grpcServer.Start()
 }
