@@ -24,5 +24,7 @@ RUN corepack enable
 WORKDIR /app
 
 COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=prod-deps /app/package.json /app/package.json 
+COPY --from=prod-deps /app/pnpm-lock.yaml /app/pnpm-lock.yaml
 COPY --from=build /app/dist /app/dist
 CMD [ "pnpm", "start" ]
