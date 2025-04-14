@@ -8,7 +8,7 @@ service Expenses {
   rpc AddExpense (NewExpenseRequest) returns (ExpenseReply) {}
 }
 
-message NewExpenseRequest {
+message ExpenseInfo {
   string name = 1;
   string paymentMethod = 2;
   string currency = 3;
@@ -16,6 +16,11 @@ message NewExpenseRequest {
   string category = 5;
   string subcategory = 6;
   string date = 7;
+}
+
+message NewExpenseRequest {
+  string userId = 1;
+  ExpenseInfo expenseInfo = 2;
 }
 
 message ExpenseReply {

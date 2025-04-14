@@ -14,6 +14,7 @@ var (
 	GRPC_PORT          *string
 	SPREADSHEET_ID     *string
 	CREDENTIALS_BASE64 *string
+	DB_URL             *string
 )
 
 func LoadEnv() {
@@ -26,6 +27,7 @@ func LoadEnv() {
 	setPort()
 	loadStr(&SPREADSHEET_ID, "SPREADSHEET_ID")
 	loadStr(&CREDENTIALS_BASE64, "CREDENTIALS_BASE64")
+	loadStr(&DB_URL, "DB_URL")
 }
 
 func setPort() {

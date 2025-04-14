@@ -18,7 +18,6 @@ type SheetsService struct {
 
 func NewSheetsService() (*SheetsService, error) {
 	srv, err := getService()
-
 	if err != nil {
 		return nil, err
 	}
@@ -26,10 +25,10 @@ func NewSheetsService() (*SheetsService, error) {
 	return &SheetsService{srv: srv}, nil
 }
 
-func (s *SheetsService) AppendRow(row *[]interface{}) error {
-	log.Printf("appending row: %v", row)
+func (s *SheetsService) AppendRow(sheetID string, sheetName string, row *[]interface{}) error {
+	log.Printf("appending row to sheet %s: %v", sheetName, row)
 
-	_, err := s.srv.Spreadsheets.Values.Append(*env.SPREADSHEET_ID, "Formulario Gastos!A:A", &sheets.ValueRange{
+	_, err := s.srv.Spreadsheets.Values.Append(sheetID, sheetName+"!A:A", &sheets.ValueRange{
 		Values: [][]interface{}{*row},
 	}).ValueInputOption("USER_ENTERED").Do()
 
@@ -37,8 +36,7 @@ func (s *SheetsService) AppendRow(row *[]interface{}) error {
 		return err
 	}
 
-	log.Println("row appended succesfully")
-
+	log.Println("row appended successfully")
 	return nil
 }
 
@@ -67,8 +65,7 @@ func getService() (*sheets.Service, error) {
 
 	ctx := context.Background()
 	client := config.Client(ctx)
-	srv, err := sheets.NewService(ctx, option.WithHTTPClient((client)))
-
+	srv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, err
 	}

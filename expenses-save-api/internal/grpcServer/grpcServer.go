@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/env"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/proto"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/sheets"
@@ -15,9 +16,9 @@ type GrpcServer struct {
 	server     *server
 }
 
-func NewGrpcServer(sheetsService *sheets.SheetsService) *GrpcServer {
+func NewGrpcServer(sheetsService *sheets.SheetsService, dbService *database.DatabaseService) *GrpcServer {
 	grpcServer := grpc.NewServer()
-	server := &server{sheetsService: sheetsService}
+	server := &server{sheetsService: sheetsService, dbService: dbService}
 	proto.RegisterExpensesServer(grpcServer, server)
 	return &GrpcServer{grpcServer: grpcServer, server: server}
 }
