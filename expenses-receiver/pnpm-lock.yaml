@@ -24,8 +24,8 @@ importers:
         specifier: 2.7.0
         version: 2.7.0
       postgres:
-        specifier: 3.4.6
-        version: 3.4.6
+        specifier: 3.4.7
+        version: 3.4.7
       winston:
         specifier: 3.17.0
         version: 3.17.0
@@ -413,8 +413,8 @@ packages:
   path-to-regexp@0.1.12:
     resolution: {integrity: sha512-RA1GjUVMnvYFxuqovrEqZoxxW5NUZqbwKtYz/Tt7nXerk0LbLblQmrsgdeOxV5SFHf0UDggjS/bSeOZwt1pmEQ==}
 
-  postgres@3.4.6:
-    resolution: {integrity: sha512-MXrZVqgUfiirfZ0MqQqXqZQa6oM5OWFjfuaHVKl7v2zW25LnOJeLpQk+UUW0ZuP94fcS+fZVqyDYm9v5SIJ11Q==}
+  postgres@3.4.7:
+    resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
     engines: {node: '>=12'}
 
   proxy-addr@2.0.7:
@@ -898,7 +898,7 @@ snapshots:
 
   path-to-regexp@0.1.12: {}
 
-  postgres@3.4.6: {}
+  postgres@3.4.7: {}
 
   proxy-addr@2.0.7:
     dependencies:
