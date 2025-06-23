@@ -8,6 +8,7 @@ import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/env"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/proto"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/sheets"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/validator"
 	"google.golang.org/grpc"
 )
 
@@ -16,9 +17,9 @@ type GrpcServer struct {
 	server     *server
 }
 
-func NewGrpcServer(sheetsService *sheets.SheetsService, dbService *database.DatabaseService) *GrpcServer {
+func NewGrpcServer(sheetsService *sheets.SheetsService, dbService *database.DatabaseService, expenseValidatorService *validator.ExpenseValidatorService) *GrpcServer {
 	grpcServer := grpc.NewServer()
-	server := &server{sheetsService: sheetsService, dbService: dbService}
+	server := &server{sheetsService: sheetsService, dbService: dbService, expenseValidatorService: expenseValidatorService}
 	proto.RegisterExpensesServer(grpcServer, server)
 	return &GrpcServer{grpcServer: grpcServer, server: server}
 }

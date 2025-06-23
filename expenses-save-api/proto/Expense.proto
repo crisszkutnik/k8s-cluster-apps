@@ -10,11 +10,11 @@ service Expenses {
 
 message ExpenseInfo {
   string name = 1;
-  string paymentMethod = 2;
-  string currency = 3;
-  int32 amount = 4;
-  string category = 5;
-  string subcategory = 6;
+  string currency = 2;
+  int32 amount = 3;
+  string categoryName = 4;
+  string subcategoryName = 5;
+  string paymentMethodName = 6;
   string date = 7;
 }
 

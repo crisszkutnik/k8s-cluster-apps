@@ -8,13 +8,15 @@ import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/proto"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/sheets"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/validator"
 	"github.com/google/uuid"
 )
 
 type server struct {
 	proto.UnimplementedExpensesServer
-	sheetsService *sheets.SheetsService
-	dbService     *database.DatabaseService
+	sheetsService           *sheets.SheetsService
+	dbService               *database.DatabaseService
+	expenseValidatorService *validator.ExpenseValidatorService
 }
 
 func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*proto.ExpenseReply, error) {
@@ -26,6 +28,23 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 		return &proto.ExpenseReply{Success: false, Message: "invalid user ID"}, nil
 	}
 
+	// Do db stuff
+
+	expense, err := s.expenseValidatorService.GetExpenseFromRequest(userID, in)
+
+	if err != nil {
+		log.Printf("failed to get expense from request: %v", err)
+		return &proto.ExpenseReply{Success: false, Message: err.Error()}, nil
+	}
+
+	err = s.dbService.InsertExpense(expense)
+
+	if err != nil {
+		log.Printf("failed to insert expense: %v", err)
+		return &proto.ExpenseReply{Success: false, Message: err.Error()}, nil
+	}
+
+	// Do old stuff. TODO: Refactor it
 	saveDestinationRows, err := s.dbService.GetDestinationsByUserId(userID)
 	if err != nil {
 		log.Printf("failed to get user expenses: %v", err)
@@ -66,10 +85,10 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 	row := []interface{}{
 		timestamp,
 		in.ExpenseInfo.Name,
-		in.ExpenseInfo.PaymentMethod,
+		in.ExpenseInfo.PaymentMethodName,
 		in.ExpenseInfo.Amount,
-		in.ExpenseInfo.Category,
-		in.ExpenseInfo.Subcategory,
+		in.ExpenseInfo.CategoryName,
+		in.ExpenseInfo.SubcategoryName,
 		in.ExpenseInfo.Date,
 		in.ExpenseInfo.Currency,
 	}

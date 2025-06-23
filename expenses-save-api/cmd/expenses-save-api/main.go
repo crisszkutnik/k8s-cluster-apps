@@ -7,6 +7,7 @@ import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/env"
 	grpcserver "github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/grpcServer"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/sheets"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/validator"
 )
 
 func main() {
@@ -22,8 +23,13 @@ func main() {
 		log.Fatalf("unable to retrieve Sheets client: %v", err)
 	}
 
-	grpcServer := grpcserver.NewGrpcServer(sheetsService, dbService)
+	expenseValidatorService, err := validator.NewExpenseValidatorService(dbService)
+	if err != nil {
+		log.Fatalf("unable to start expense validator service: %v", err)
+	}
 
-	log.Println("starting server")
+	grpcServer := grpcserver.NewGrpcServer(sheetsService, dbService, expenseValidatorService)
+
+	log.Printf("starting server in port %s", *env.GRPC_PORT)
 	grpcServer.Start()
 }
