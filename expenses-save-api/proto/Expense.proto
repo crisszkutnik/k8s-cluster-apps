@@ -11,7 +11,7 @@ service Expenses {
 message ExpenseInfo {
   string name = 1;
   string currency = 2;
-  int32 amount = 3;
+  double amount = 3;
   string categoryName = 4;
   string subcategoryName = 5;
   string paymentMethodName = 6;
@@ -24,6 +24,6 @@ message NewExpenseRequest {
 }
 
 message ExpenseReply {
-  bool success = 1;
+  int32 code = 1;
   string message = 2;
 }

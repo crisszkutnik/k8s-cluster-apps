@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/dollar"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/env"
 	grpcserver "github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/grpcServer"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/sheets"
@@ -12,6 +13,11 @@ import (
 
 func main() {
 	env.LoadEnv()
+
+	dollarService, err := dollar.NewDollarService()
+	if err != nil {
+		log.Fatalf("unable to start dollar service: %v", err)
+	}
 
 	dbService, err := database.NewDatabaseService()
 	if err != nil {
@@ -23,7 +29,7 @@ func main() {
 		log.Fatalf("unable to retrieve Sheets client: %v", err)
 	}
 
-	expenseValidatorService, err := validator.NewExpenseValidatorService(dbService)
+	expenseValidatorService, err := validator.NewExpenseValidatorService(dbService, dollarService)
 	if err != nil {
 		log.Fatalf("unable to start expense validator service: %v", err)
 	}

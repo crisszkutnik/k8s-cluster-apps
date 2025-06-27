@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/errors"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/proto"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/sheets"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/validator"
@@ -25,7 +26,7 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 	userID, err := uuid.Parse(in.UserId)
 	if err != nil {
 		log.Printf("invalid user ID: %v", err)
-		return &proto.ExpenseReply{Success: false, Message: "invalid user ID"}, nil
+		return &proto.ExpenseReply{Code: int32(errors.InvalidPayload), Message: "invalid user ID"}, nil
 	}
 
 	// Do db stuff
@@ -34,21 +35,21 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 
 	if err != nil {
 		log.Printf("failed to get expense from request: %v", err)
-		return &proto.ExpenseReply{Success: false, Message: err.Error()}, nil
+		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
 	}
 
 	err = s.dbService.InsertExpense(expense)
 
 	if err != nil {
 		log.Printf("failed to insert expense: %v", err)
-		return &proto.ExpenseReply{Success: false, Message: err.Error()}, nil
+		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
 	}
 
 	// Do old stuff. TODO: Refactor it
 	saveDestinationRows, err := s.dbService.GetDestinationsByUserId(userID)
 	if err != nil {
 		log.Printf("failed to get user expenses: %v", err)
-		return &proto.ExpenseReply{Success: false, Message: err.Error()}, nil
+		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
 	}
 
 	/*
@@ -73,13 +74,13 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 
 	if sheetsInfo == nil {
 		log.Printf("no Google Sheets configuration found for user %s", userID)
-		return &proto.ExpenseReply{Success: false, Message: "no Google Sheets configuration found"}, nil
+		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: "no Google Sheets configuration found"}, nil
 	}
 
 	timestamp, err := getTimestamp()
 	if err != nil {
 		log.Printf("failed to get timestamp: %v", err)
-		return &proto.ExpenseReply{Success: false, Message: err.Error()}, nil
+		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
 	}
 
 	row := []interface{}{
@@ -97,10 +98,10 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 
 	if err != nil {
 		log.Printf("failed to append row: %v", err)
-		return &proto.ExpenseReply{Success: false, Message: err.Error()}, nil
+		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
 	}
 
-	return &proto.ExpenseReply{Success: true, Message: "Row saved"}, nil
+	return &proto.ExpenseReply{Code: int32(errors.Success), Message: "success"}, nil
 }
 
 func getTimestamp() (string, error) {
