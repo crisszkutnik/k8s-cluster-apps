@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"context"
+	stdErrors "errors"
 	"log"
 	"time"
 
@@ -35,6 +36,12 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 
 	if err != nil {
 		log.Printf("failed to get expense from request: %v", err)
+		var validationErr *errors.ValidationError
+
+		if stdErrors.As(err, &validationErr) {
+			return &proto.ExpenseReply{Code: validationErr.Code, Message: validationErr.Error()}, nil
+		}
+
 		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
 	}
 
