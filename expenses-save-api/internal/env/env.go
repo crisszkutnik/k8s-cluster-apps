@@ -1,8 +1,6 @@
 package env
 
 import (
-	"errors"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -54,8 +52,7 @@ func loadStr(dest **string, varName string) error {
 	p := os.Getenv(varName)
 
 	if len(p) == 0 {
-		str := fmt.Sprintf("environment variable %s not found", varName)
-		return errors.New(str)
+		log.Fatalf("environment variable %s not found", varName)
 	}
 
 	*dest = &p
@@ -66,14 +63,12 @@ func loadInt8(dest **int8, varName string) error {
 	p := os.Getenv(varName)
 
 	if len(p) == 0 {
-		str := fmt.Sprintf("environment variable %s not found", varName)
-		return errors.New(str)
+		log.Fatalf("environment variable %s not found", varName)
 	}
 
 	num, err := strconv.ParseInt(p, 10, 8)
 	if err != nil {
-		str := fmt.Sprintf("environment variable %s is not a valid int8: %v", varName, err)
-		return errors.New(str)
+		log.Fatalf("environment variable %s is not a valid int8: %v", varName, err)
 	}
 
 	val := int8(num)

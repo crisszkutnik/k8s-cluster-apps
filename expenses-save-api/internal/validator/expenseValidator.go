@@ -73,6 +73,7 @@ func (s *ExpenseValidatorService) GetExpenseFromRequest(userID uuid.UUID, req *p
 	}
 
 	expense := &database.Expense{
+		ID:              uuid.Nil,
 		UserID:          userID,
 		Description:     req.ExpenseInfo.Name,
 		PaymentMethodID: paymentMethod.Id,
@@ -87,7 +88,12 @@ func (s *ExpenseValidatorService) GetExpenseFromRequest(userID uuid.UUID, req *p
 }
 
 func (s *ExpenseValidatorService) parseDate(req *proto.NewExpenseRequest) (time.Time, error) {
-	date, err := time.Parse("2006-01-02", req.ExpenseInfo.Date)
+	buenosAiresLoc, err := time.LoadLocation("America/Argentina/Buenos_Aires")
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	date, err := time.ParseInLocation("2006-01-02", req.ExpenseInfo.Date, buenosAiresLoc)
 	if err != nil {
 		return time.Time{}, &errors.ValidationError{
 			Field:   "date",

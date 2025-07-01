@@ -117,8 +117,10 @@ func (s *DatabaseService) GetPaymentMethodByName(userID uuid.UUID, paymentMethod
 	return &paymentMethod, nil
 }
 
-func (s *DatabaseService) InsertExpense(expense *Expense) error {
-	_, err := s.conn.Exec(context.Background(), `
+func (s *DatabaseService) InsertExpense(expense *Expense) (uuid.UUID, error) {
+	var id uuid.UUID
+
+	err := s.conn.QueryRow(context.Background(), `
 		INSERT INTO public.expense (
 			user_id,
 			description,
@@ -130,6 +132,7 @@ func (s *DatabaseService) InsertExpense(expense *Expense) error {
 			date
 		) VALUES
 		($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id
 	`,
 		expense.UserID,
 		expense.Description,
@@ -139,9 +142,48 @@ func (s *DatabaseService) InsertExpense(expense *Expense) error {
 		expense.CategoryID,
 		expense.SubcategoryID,
 		expense.Date,
+	).Scan(&id)
+
+	return id, err
+}
+
+func (s *DatabaseService) RetrieveExpenseForSheets(expenseID uuid.UUID) (*ExpenseSheetsRow, error) {
+	var expense ExpenseSheetsRow
+
+	err := s.conn.QueryRow(context.Background(), `
+		SELECT
+			e.id,
+			e.date,
+			e.description,
+			pm.name AS payment_method_name,
+			e.ars_amount,
+			e.usd_amount,
+			c.name AS category_name,
+			sc.name AS subcategory_name,
+			e.created_date
+		FROM expense e
+		JOIN payment_method pm ON pm.id = e.payment_method_id
+		JOIN category c ON c.id = e.category_id
+		LEFT JOIN subcategory sc ON sc.id = e.subcategory_id
+		WHERE e.id = $1
+		LIMIT 1;
+	`, expenseID).Scan(
+		&expense.ID,
+		&expense.Date,
+		&expense.Description,
+		&expense.PaymentMethodName,
+		&expense.ARSAmount,
+		&expense.USDAmount,
+		&expense.CategoryName,
+		&expense.SubcategoryName,
+		&expense.CreatedDate,
 	)
 
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	return &expense, nil
 }
 
 func collectRow(row pgx.CollectableRow) (*UserExpenseSave, error) {

@@ -24,6 +24,7 @@ type UserExpenseSave struct {
 
 // This is the actual expense
 type Expense struct {
+	ID              uuid.UUID  `db:"id"`
 	UserID          uuid.UUID  `db:"user_id"`
 	Description     string     `db:"description"`
 	PaymentMethodID uuid.UUID  `db:"payment_method_id"`
@@ -32,6 +33,18 @@ type Expense struct {
 	CategoryID      uuid.UUID  `db:"category_id"`
 	SubcategoryID   *uuid.UUID `db:"subcategory_id"`
 	Date            time.Time  `db:"date"`
+}
+
+type ExpenseSheetsRow struct {
+	ID                uuid.UUID `db:"id"`
+	Date              time.Time `db:"date"`
+	Description       string    `db:"description"`
+	PaymentMethodName string    `db:"payment_method_name"`
+	ARSAmount         float64   `db:"ars_amount"`
+	USDAmount         float64   `db:"usd_amount"`
+	CategoryName      string    `db:"category_name"`
+	SubcategoryName   *string   `db:"subcategory_name"`
+	CreatedDate       time.Time `db:"created_date"`
 }
 
 type Category struct {

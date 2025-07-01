@@ -45,7 +45,7 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
 	}
 
-	err = s.dbService.InsertExpense(expense)
+	expenseID, err := s.dbService.InsertExpense(expense)
 
 	if err != nil {
 		log.Printf("failed to insert expense: %v", err)
@@ -84,21 +84,30 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: "no Google Sheets configuration found"}, nil
 	}
 
-	timestamp, err := getTimestamp()
+	rowExpense, err := s.dbService.RetrieveExpenseForSheets(expenseID)
+
 	if err != nil {
-		log.Printf("failed to get timestamp: %v", err)
+		log.Printf("failed to retrieve expense for sheets: %v", err)
+		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
+	}
+
+	// Load Buenos Aires timezone for formatting
+	buenosAiresLoc, err := time.LoadLocation("America/Argentina/Buenos_Aires")
+	if err != nil {
+		log.Printf("failed to load Buenos Aires timezone: %v", err)
 		return &proto.ExpenseReply{Code: int32(errors.InternalError), Message: err.Error()}, nil
 	}
 
 	row := []interface{}{
-		timestamp,
-		in.ExpenseInfo.Name,
-		in.ExpenseInfo.PaymentMethodName,
-		in.ExpenseInfo.Amount,
-		in.ExpenseInfo.CategoryName,
-		in.ExpenseInfo.SubcategoryName,
-		in.ExpenseInfo.Date,
-		in.ExpenseInfo.Currency,
+		rowExpense.ID,
+		rowExpense.Date.In(buenosAiresLoc).Format("2006-01-02"),
+		rowExpense.Description,
+		rowExpense.PaymentMethodName,
+		rowExpense.ARSAmount,
+		rowExpense.USDAmount,
+		rowExpense.CategoryName,
+		rowExpense.SubcategoryName,
+		rowExpense.CreatedDate,
 	}
 
 	err = s.sheetsService.AppendRow(sheetsInfo.SheetID, sheetsInfo.SheetName, &row)
@@ -109,13 +118,4 @@ func (s *server) AddExpense(_ context.Context, in *proto.NewExpenseRequest) (*pr
 	}
 
 	return &proto.ExpenseReply{Code: int32(errors.Success), Message: "success"}, nil
-}
-
-func getTimestamp() (string, error) {
-	loc, err := time.LoadLocation("America/Argentina/Buenos_Aires")
-	if err != nil {
-		return "", err
-	}
-
-	return time.Now().In(loc).Format("2/1/2006 15:04:05"), nil
 }
