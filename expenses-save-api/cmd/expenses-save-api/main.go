@@ -23,6 +23,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to start database service: %v", err)
 	}
+	defer dbService.Close()
 
 	sheetsService, err := sheets.NewSheetsService()
 	if err != nil {
