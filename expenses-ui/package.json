@@ -19,6 +19,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/react-router": "^1.127.9",
     "@tanstack/react-router-devtools": "^1.127.9",
+    "@tremor/react": "^3.17.0",
     "@types/axios": "^0.14.4",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
@@ -30,7 +31,8 @@
     "recharts": "^3.0.2",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.11",
-    "zustand": "^5.0.6"
+    "zustand": "^5.0.6",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

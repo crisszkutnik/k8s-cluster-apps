@@ -1,14 +1,46 @@
 import { create } from "zustand";
 import type { Expense } from "../types";
 
-interface ExpenseStoreState {
-  expenses: Expense[];
-  setExpenses: (newExpenses: Expense[]) => void;
+interface ExpenseCache {
+  [key: string]: Expense[]; // key format: "YYYY-MM"
 }
 
-export const useExpenseStore = create<ExpenseStoreState>((set) => ({
+interface ExpenseStoreState {
+  expenses: Expense[];
+  cache: ExpenseCache;
+  currentMonth: string; // "YYYY-MM" format
+  setExpenses: (newExpenses: Expense[], month: string) => void;
+  getExpensesByMonth: (month: string) => Expense[] | null;
+  setCurrentMonth: (month: string) => void;
+}
+
+export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
   expenses: [],
-  setExpenses: (newExpenses: Expense[]) => {
-    set({ expenses: newExpenses });
+  cache: {},
+  currentMonth: "",
+
+  setExpenses: (newExpenses: Expense[], month: string) => {
+    set((state) => ({
+      expenses: newExpenses,
+      cache: {
+        ...state.cache,
+        [month]: newExpenses,
+      },
+      currentMonth: month,
+    }));
+  },
+
+  getExpensesByMonth: (month: string) => {
+    return get().cache[month] || null;
+  },
+
+  setCurrentMonth: (month: string) => {
+    const cached = get().cache[month];
+    if (cached) {
+      set({
+        expenses: cached,
+        currentMonth: month,
+      });
+    }
   },
 }));
