@@ -41,7 +41,9 @@ export function Home() {
         replace: true,
       });
     } else {
-      const year = currentYear || new Date().getFullYear().toString();
+      const year = currentYear
+        ? parseInt(currentYear)
+        : new Date().getFullYear();
       void router.navigate({
         to: "/",
         search: { year, view: "yearly" },

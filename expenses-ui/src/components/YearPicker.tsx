@@ -21,7 +21,7 @@ export function YearPicker({ currentYear }: YearPickerProps) {
   const handleYearSelect = (selectedYear: number) => {
     void router.navigate({
       to: "/",
-      search: (prev) => ({ ...prev, year: String(selectedYear), view: "yearly" }),
+      search: (prev) => ({ ...prev, year: selectedYear, view: "yearly" }),
       replace: true,
     });
     setIsOpen(false);

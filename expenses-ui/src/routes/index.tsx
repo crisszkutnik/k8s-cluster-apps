@@ -6,15 +6,9 @@ import { useExpenseStore } from "../lib/stores/expenseStore";
 import { z } from "zod";
 
 const homeSearchSchema = z.object({
-  month: z.string().optional().transform((val) => {
-    // Remove any quotes from the month value
-    return val ? val.replace(/["']/g, '') : val;
-  }),
-  year: z.string().optional().transform((val) => {
-    // Remove any quotes from the year value
-    return val ? val.replace(/["']/g, '') : val;
-  }),
-  view: z.enum(["monthly", "yearly"]).optional(),
+  month: z.string().optional().catch(undefined),
+  year: z.coerce.number().optional().catch(undefined),
+  view: z.enum(["monthly", "yearly"]).optional().catch(undefined),
 });
 
 type HomeSearch = z.infer<typeof homeSearchSchema>;
@@ -31,7 +25,7 @@ export const Route = createFileRoute(ROUTES.HOME)({
     
     if (currentView === "yearly") {
       // Get current year if not provided
-      const currentYear = year || String(new Date().getFullYear());
+      const currentYear = String(year || new Date().getFullYear());
 
       // Check if we already have this year cached
       const cached = useExpenseStore.getState().getExpensesByPeriod(currentYear, "yearly");

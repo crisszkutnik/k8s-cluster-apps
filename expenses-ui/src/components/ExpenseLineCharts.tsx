@@ -38,6 +38,94 @@ const COLORS = [
   "#6366F1", // indigo
 ];
 
+interface TooltipPayloadItem {
+  value: number;
+  dataKey: string;
+  color: string;
+  name?: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+  categories: Array<{ id: string; name: string }>;
+}
+
+// Custom tooltip component for category line chart
+const CustomCategoryTooltip = ({
+  active,
+  payload,
+  label,
+  categories,
+}: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    // Filter out entries with no value (0 or undefined)
+    const activeEntries = payload.filter(
+      (entry) => entry.value && Number(entry.value) > 0
+    );
+
+    if (activeEntries.length === 0) {
+      return null;
+    }
+
+    return (
+      <div
+        style={{
+          backgroundColor: "rgba(0, 0, 0, 0.9)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          borderRadius: "8px",
+          padding: "12px",
+          color: "#fff",
+        }}
+      >
+        <p style={{ marginBottom: "8px", fontWeight: "600" }}>{label}</p>
+        {activeEntries.map((entry, index) => {
+          const categoryId = entry.dataKey as string;
+          const category = categories.find((c) => c.id === categoryId);
+          const categoryName = category?.name || "Unknown";
+
+          return (
+            <div
+              key={`item-${index}`}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                marginBottom: "4px",
+              }}
+            >
+              <span
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <span
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    backgroundColor: entry.color,
+                    borderRadius: "2px",
+                    display: "inline-block",
+                  }}
+                />
+                <span style={{ fontSize: "13px" }}>{categoryName}</span>
+              </span>
+              <span style={{ fontWeight: "600", fontSize: "13px" }}>
+                {Number(entry.value).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return null;
+};
+
 export function ExpenseLineCharts({
   expenses,
   categories,
@@ -49,7 +137,9 @@ export function ExpenseLineCharts({
 
     expenses.forEach((expense) => {
       const date = new Date(expense.date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthKey = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
       const amount = expense.usdAmount || 0;
 
       if (!monthCategoryMap.has(monthKey)) {
@@ -81,7 +171,9 @@ export function ExpenseLineCharts({
 
     expenses.forEach((expense) => {
       const date = new Date(expense.date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthKey = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
       const amount = expense.usdAmount || 0;
 
       const current = monthTotalMap.get(monthKey) || 0;
@@ -147,16 +239,7 @@ export function ExpenseLineCharts({
                   }}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(0, 0, 0, 0.8)",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    borderRadius: "8px",
-                    color: "#fff",
-                  }}
-                  formatter={(value: number) => [
-                    value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                    "",
-                  ]}
+                  content={<CustomCategoryTooltip categories={categories} />}
                 />
                 <Legend
                   wrapperStyle={{ fontSize: "12px", paddingTop: "20px" }}
@@ -220,7 +303,10 @@ export function ExpenseLineCharts({
                     color: "#fff",
                   }}
                   formatter={(value: number) => [
-                    value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    value.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }),
                     "Total",
                   ]}
                 />
@@ -243,4 +329,3 @@ export function ExpenseLineCharts({
     </>
   );
 }
-

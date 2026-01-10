@@ -44,15 +44,15 @@ func NewDatabaseService() (*DatabaseService, error) {
 }
 
 func (s *DatabaseService) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	return s.conn.QueryRow(ctx, sql, args...)
+	return s.pool.QueryRow(ctx, sql, args...)
 }
 
 func (s *DatabaseService) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
-	return s.conn.Query(ctx, sql, args...)
+	return s.pool.Query(ctx, sql, args...)
 }
 
 func (s *DatabaseService) Exec(ctx context.Context, sql string, args ...interface{}) error {
-	_, err := s.conn.Exec(ctx, sql, args...)
+	_, err := s.pool.Exec(ctx, sql, args...)
 	return err
 }
 
@@ -215,56 +215,6 @@ func (s *DatabaseService) RetrieveExpenseForSheets(expenseID uuid.UUID) (*Expens
 	}
 
 	return &expense, nil
-}
-
-func (s *DatabaseService) GetExpenses(userID uuid.UUID) ([]*Expense, error) {
-	rows, err := s.conn.Query(
-		context.Background(),
-		`SELECT
-			id,
-			user_id,
-			description,
-			payment_method_id,
-			ars_amount,
-			usd_amount,
-			category_id,
-			subcategory_id,
-			date
-		FROM public.expense
-		WHERE user_id = $1
-		ORDER BY date DESC`,
-		userID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var expenses []*Expense
-	for rows.Next() {
-		var expense Expense
-		err := rows.Scan(
-			&expense.ID,
-			&expense.UserID,
-			&expense.Description,
-			&expense.PaymentMethodID,
-			&expense.ARSAmount,
-			&expense.USDAmount,
-			&expense.CategoryID,
-			&expense.SubcategoryID,
-			&expense.Date,
-		)
-		if err != nil {
-			return nil, err
-		}
-		expenses = append(expenses, &expense)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return expenses, nil
 }
 
 func collectRow(row pgx.CollectableRow) (*UserExpenseSave, error) {
