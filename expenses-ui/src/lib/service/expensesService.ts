@@ -37,3 +37,27 @@ export async function loadExpenses(month?: string) {
   });
   return data;
 }
+
+export async function loadYearlyExpenses(year?: string) {
+  let startDate: string;
+  let endDate: string;
+
+  if (year) {
+    // year is in "YYYY" format
+    startDate = `${year}-01-01`;
+    endDate = `${year}-12-31`;
+  } else {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    startDate = `${currentYear}-01-01`;
+    endDate = `${currentYear}-12-31`;
+  }
+
+  const { data } = await axios.get<Expense[]>("http://localhost:3100/expense", {
+    params: {
+      startDate,
+      endDate,
+    },
+  });
+  return data;
+}

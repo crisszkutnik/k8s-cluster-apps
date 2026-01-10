@@ -4,10 +4,13 @@ import (
 	"log"
 
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database/repository"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/dollar"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/env"
 	grpcserver "github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/grpcServer"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/category"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/expense"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/sheets"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/validator"
 )
@@ -37,7 +40,22 @@ func main() {
 
 	grpcServer := grpcserver.NewGrpcServer(sheetsService, dbService, expenseValidatorService)
 
-	httpServer := http.NewHttpServer(dbService)
+	// Rpositories
+	categoryRepo := repository.NewCategoryRepository(dbService)
+	subcategoryRepo := repository.NewSubcategoryRepository(dbService)
+	paymentMethodRepo := repository.NewPaymentMethodRepository(dbService)
+	recurrentExpenseRepo := repository.NewRecurrentExpenseRepository(dbService)
+	expenseRepo := repository.NewExpenseRepository(dbService)
+
+	// Services
+	categoryService := category.NewCategoryService(categoryRepo)
+	expenseService := expense.NewExpenseService(categoryRepo, subcategoryRepo, paymentMethodRepo, recurrentExpenseRepo, expenseRepo)
+
+	// Controllers
+	categoryController := category.NewCategoryController(categoryService)
+	expenseController := expense.NewExpenseController(expenseService)
+
+	httpServer := http.NewHttpServer(dbService, categoryController, expenseController)
 	httpServer.RegisterRouter()
 
 	go func() {
@@ -45,6 +63,5 @@ func main() {
 		grpcServer.Start()
 	}()
 
-	log.Printf("starting HTTP server on port %s", *env.HTTP_PORT)
 	httpServer.Start()
 }

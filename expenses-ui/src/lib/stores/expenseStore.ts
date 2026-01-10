@@ -2,45 +2,101 @@ import { create } from "zustand";
 import type { Expense } from "../types";
 
 interface ExpenseCache {
-  [key: string]: Expense[]; // key format: "YYYY-MM"
+  monthly: { [key: string]: Expense[] }; // key format: "YYYY-MM"
+  yearly: { [key: string]: Expense[] }; // key format: "YYYY"
 }
 
 interface ExpenseStoreState {
   expenses: Expense[];
   cache: ExpenseCache;
   currentMonth: string; // "YYYY-MM" format
-  setExpenses: (newExpenses: Expense[], month: string) => void;
-  getExpensesByMonth: (month: string) => Expense[] | null;
-  setCurrentMonth: (month: string) => void;
+  currentYear: string; // "YYYY" format
+  view: "monthly" | "yearly";
+  setExpenses: (
+    newExpenses: Expense[],
+    period: string,
+    view: "monthly" | "yearly"
+  ) => void;
+  getExpensesByPeriod: (
+    period: string,
+    view: "monthly" | "yearly"
+  ) => Expense[] | null;
+  setCurrentPeriod: (period: string, view: "monthly" | "yearly") => void;
+  setView: (view: "monthly" | "yearly") => void;
 }
 
 export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
   expenses: [],
-  cache: {},
+  cache: {
+    monthly: {},
+    yearly: {},
+  },
   currentMonth: "",
+  currentYear: "",
+  view: "monthly",
 
-  setExpenses: (newExpenses: Expense[], month: string) => {
-    set((state) => ({
-      expenses: newExpenses,
-      cache: {
-        ...state.cache,
-        [month]: newExpenses,
-      },
-      currentMonth: month,
-    }));
-  },
-
-  getExpensesByMonth: (month: string) => {
-    return get().cache[month] || null;
-  },
-
-  setCurrentMonth: (month: string) => {
-    const cached = get().cache[month];
-    if (cached) {
-      set({
-        expenses: cached,
-        currentMonth: month,
-      });
+  setExpenses: (
+    newExpenses: Expense[],
+    period: string,
+    view: "monthly" | "yearly"
+  ) => {
+    if (view === "monthly") {
+      set((state) => ({
+        expenses: newExpenses,
+        cache: {
+          ...state.cache,
+          monthly: {
+            ...state.cache.monthly,
+            [period]: newExpenses,
+          },
+        },
+        currentMonth: period,
+        view: "monthly",
+      }));
+    } else {
+      set((state) => ({
+        expenses: newExpenses,
+        cache: {
+          ...state.cache,
+          yearly: {
+            ...state.cache.yearly,
+            [period]: newExpenses,
+          },
+        },
+        currentYear: period,
+        view: "yearly",
+      }));
     }
+  },
+
+  getExpensesByPeriod: (period: string, view: "monthly" | "yearly") => {
+    if (view === "monthly") {
+      return get().cache.monthly[period] || null;
+    } else {
+      return get().cache.yearly[period] || null;
+    }
+  },
+
+  setCurrentPeriod: (period: string, view: "monthly" | "yearly") => {
+    const cached = get().getExpensesByPeriod(period, view);
+    if (cached) {
+      if (view === "monthly") {
+        set({
+          expenses: cached,
+          currentMonth: period,
+          view: "monthly",
+        });
+      } else {
+        set({
+          expenses: cached,
+          currentYear: period,
+          view: "yearly",
+        });
+      }
+    }
+  },
+
+  setView: (view: "monthly" | "yearly") => {
+    set({ view });
   },
 }));

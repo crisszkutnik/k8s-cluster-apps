@@ -3,58 +3,41 @@ import { Button } from "./ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 
-interface MonthPickerProps {
-  currentMonth: string; // "YYYY-MM" format
+interface YearPickerProps {
+  currentYear: string; // "YYYY" format
 }
 
-export function MonthPicker({ currentMonth }: MonthPickerProps) {
+export function YearPicker({ currentYear }: YearPickerProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-
-  // Parse current month
-  const [year, month] = currentMonth.split("-");
-  const currentDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-  const displayDate = currentDate.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
-  // For the picker, we'll show the current year and allow navigation
-  const [pickerYear, setPickerYear] = useState(currentDate.getFullYear());
-
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
-  const handleMonthSelect = (selectedMonth: number) => {
-    const newMonth = `${pickerYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
+  
+  // Parse current year
+  const year = parseInt(currentYear);
+  const currentYearDate = new Date(year, 0, 1);
+  
+  // Calculate the decade to show (e.g., 2020-2029)
+  const [decadeStart, setDecadeStart] = useState(Math.floor(year / 10) * 10);
+  
+  const handleYearSelect = (selectedYear: number) => {
     void router.navigate({
       to: "/",
-      search: (prev) => ({ ...prev, month: newMonth, view: "monthly" }),
+      search: (prev) => ({ ...prev, year: String(selectedYear), view: "yearly" }),
       replace: true,
     });
     setIsOpen(false);
   };
-
-  const handlePreviousYear = () => {
-    setPickerYear(pickerYear - 1);
+  
+  const handlePreviousDecade = () => {
+    setDecadeStart(decadeStart - 10);
   };
-
-  const handleNextYear = () => {
-    setPickerYear(pickerYear + 1);
+  
+  const handleNextDecade = () => {
+    setDecadeStart(decadeStart + 10);
   };
-
+  
+  // Generate array of years for the current decade
+  const years = Array.from({ length: 12 }, (_, i) => decadeStart + i - 1);
+  
   return (
     <div className="relative">
       <Button
@@ -63,50 +46,53 @@ export function MonthPicker({ currentMonth }: MonthPickerProps) {
         className="flex items-center gap-2"
       >
         <Calendar className="w-4 h-4" />
-        <span className="font-semibold">{displayDate}</span>
+        <span className="font-semibold">{currentYear}</span>
       </Button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-lg shadow-lg z-50 p-4">
-          {/* Year Navigation */}
+          {/* Decade Navigation */}
           <div className="flex items-center justify-between mb-4">
             <Button
               variant="outline"
               size="sm"
-              onClick={handlePreviousYear}
+              onClick={handlePreviousDecade}
               className="p-2 h-8 w-8"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-lg font-semibold">{pickerYear}</span>
+            <span className="text-lg font-semibold">
+              {decadeStart} - {decadeStart + 9}
+            </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={handleNextYear}
+              onClick={handleNextDecade}
               className="p-2 h-8 w-8"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
 
-          {/* Month Grid */}
+          {/* Year Grid */}
           <div className="grid grid-cols-3 gap-2">
-            {months.map((monthName, index) => {
-              const isCurrentMonth =
-                pickerYear === currentDate.getFullYear() &&
-                index === parseInt(month) - 1;
+            {years.map((yearValue) => {
+              const isCurrentYear = yearValue === year;
+              const isOutOfRange = yearValue < decadeStart || yearValue > decadeStart + 9;
 
               return (
                 <button
-                  key={monthName}
-                  onClick={() => handleMonthSelect(index)}
+                  key={yearValue}
+                  onClick={() => handleYearSelect(yearValue)}
                   className={`py-2 px-3 rounded text-sm font-medium transition-colors ${
-                    isCurrentMonth
+                    isCurrentYear
                       ? "bg-blue-600 text-white"
+                      : isOutOfRange
+                      ? "bg-slate-950 text-gray-500"
                       : "bg-slate-800 hover:bg-slate-700 text-gray-300"
                   }`}
                 >
-                  {monthName.slice(0, 3)}
+                  {yearValue}
                 </button>
               );
             })}

@@ -2,92 +2,139 @@ import { useMemo } from "react";
 import { Card, Metric, Flex, Text } from "@tremor/react";
 import { useExpenseStore } from "../lib/stores/expenseStore";
 import { useCategoryStore } from "../lib/stores/categoryStore";
+import { usePaymentMethodStore } from "../lib/stores/paymentMethodStore";
 import { MonthPicker } from "../components/MonthPicker";
+import { YearPicker } from "../components/YearPicker";
 import { ExpensePieChart } from "../components/ExpensePieChart";
+import { ExpenseLineCharts } from "../components/ExpenseLineCharts";
+import { ExpenseTables } from "../components/ExpenseTables";
+import { categorizeExpenses } from "../lib/utils";
+import { useRouter } from "@tanstack/react-router";
 
 export function Home() {
+  const router = useRouter();
   const expenses = useExpenseStore((state) => state.expenses);
   const categories = useCategoryStore((state) => state.categories);
+  const paymentMethods = usePaymentMethodStore((state) => state.paymentMethods);
   const currentMonth = useExpenseStore((state) => state.currentMonth);
+  const currentYear = useExpenseStore((state) => state.currentYear);
+  const view = useExpenseStore((state) => state.view);
 
-  // Calculate KPI values
+  // Categorize expenses using utility function
+  const { monthly, installments, recurrent } = useMemo(
+    () => categorizeExpenses(expenses),
+    [expenses]
+  );
+
+  // Handle view toggle
+  const handleViewChange = (newView: "monthly" | "yearly") => {
+    if (newView === "monthly") {
+      const month =
+        currentMonth ||
+        new Date().toLocaleDateString("en-CA", {
+          year: "numeric",
+          month: "2-digit",
+        });
+      void router.navigate({
+        to: "/",
+        search: { month, view: "monthly" },
+        replace: true,
+      });
+    } else {
+      const year = currentYear || new Date().getFullYear().toString();
+      void router.navigate({
+        to: "/",
+        search: { year, view: "yearly" },
+        replace: true,
+      });
+    }
+  };
+
+  // Calculate KPI values using categorized expenses
   const arsTotal = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + (expense.arsAmount || 0), 0);
   }, [expenses]);
 
   const arsMes = useMemo(() => {
-    return expenses.reduce((sum, expense) => {
-      if (expense.recurrentExpenseId || expense.installementsExpenseId) {
-        return sum;
-      }
-
-      return sum + (expense.arsAmount || 0);
-    }, 0);
-  }, [expenses]);
+    return monthly.reduce((sum, expense) => sum + (expense.arsAmount || 0), 0);
+  }, [monthly]);
 
   const arsCuotas = useMemo(() => {
-    return expenses.reduce((sum, expense) => {
-      if (expense.recurrentExpenseId || !expense.installementsExpenseId) {
-        return sum;
-      }
-
-      return sum + (expense.arsAmount || 0);
-    }, 0);
-  }, [expenses]);
+    return installments.reduce(
+      (sum, expense) => sum + (expense.arsAmount || 0),
+      0
+    );
+  }, [installments]);
 
   const arsFijos = useMemo(() => {
-    return expenses.reduce((sum, expense) => {
-      if (!expense.recurrentExpenseId || expense.installementsExpenseId) {
-        return sum;
-      }
-
-      return sum + (expense.arsAmount || 0);
-    }, 0);
-  }, [expenses]);
+    return recurrent.reduce(
+      (sum, expense) => sum + (expense.arsAmount || 0),
+      0
+    );
+  }, [recurrent]);
 
   const usdTotal = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + (expense.usdAmount || 0), 0);
   }, [expenses]);
 
   const usdMes = useMemo(() => {
-    return expenses.reduce((sum, expense) => {
-      if (expense.recurrentExpenseId || expense.installementsExpenseId) {
-        return sum;
-      }
-
-      return sum + (expense.usdAmount || 0);
-    }, 0);
-  }, [expenses]);
+    return monthly.reduce((sum, expense) => sum + (expense.usdAmount || 0), 0);
+  }, [monthly]);
 
   const usdCuotas = useMemo(() => {
-    return expenses.reduce((sum, expense) => {
-      if (expense.recurrentExpenseId || !expense.installementsExpenseId) {
-        return sum;
-      }
-
-      return sum + (expense.usdAmount || 0);
-    }, 0);
-  }, [expenses]);
+    return installments.reduce(
+      (sum, expense) => sum + (expense.usdAmount || 0),
+      0
+    );
+  }, [installments]);
 
   const usdFijos = useMemo(() => {
-    return expenses.reduce((sum, expense) => {
-      if (!expense.recurrentExpenseId || expense.installementsExpenseId) {
-        return sum;
-      }
-
-      return sum + (expense.usdAmount || 0);
-    }, 0);
-  }, [expenses]);
+    return recurrent.reduce(
+      (sum, expense) => sum + (expense.usdAmount || 0),
+      0
+    );
+  }, [recurrent]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
-      {/* Header with Month Selector */}
+      {/* Header with View Switcher and Period Selector */}
       <Flex justifyContent="between" alignItems="center">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your expenses</p>
         </div>
-        <MonthPicker currentMonth={currentMonth} />
+        <div className="flex items-center gap-4">
+          {/* View Switcher */}
+          <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-1">
+            <button
+              onClick={() => handleViewChange("monthly")}
+              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                view === "monthly"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Monthly analysis
+            </button>
+            <button
+              onClick={() => handleViewChange("yearly")}
+              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                view === "yearly"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Yearly analysis
+            </button>
+          </div>
+
+          {/* Period Selector */}
+          {view === "monthly" ? (
+            <MonthPicker currentMonth={currentMonth} />
+          ) : (
+            <YearPicker currentYear={currentYear} />
+          )}
+        </div>
       </Flex>
 
       {/* ARS KPI Cards */}
@@ -158,8 +205,27 @@ export function Home() {
         </div>
       </div>
 
-      {/* Pie Chart */}
-      <ExpensePieChart expenses={expenses} categories={categories} />
+      {/* Charts - conditional based on view */}
+      {view === "yearly" ? (
+        <>
+          {/* Line Charts for Yearly View */}
+          <ExpenseLineCharts expenses={expenses} categories={categories} />
+          {/* Pie Chart */}
+          <ExpensePieChart expenses={expenses} categories={categories} />
+        </>
+      ) : (
+        <>
+          {/* Pie Chart for Monthly View */}
+          <ExpensePieChart expenses={expenses} categories={categories} />
+        </>
+      )}
+
+      {/* Tables - shown in both views */}
+      <ExpenseTables
+        expenses={expenses}
+        categories={categories}
+        paymentMethods={paymentMethods}
+      />
     </div>
   );
 }

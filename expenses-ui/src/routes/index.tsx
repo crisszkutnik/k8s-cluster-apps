@@ -1,12 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Home } from "../pages/Home";
 import { ROUTES } from "./routes";
-import { loadExpenses } from "../lib/service/expensesService";
+import { loadExpenses, loadYearlyExpenses } from "../lib/service/expensesService";
 import { useExpenseStore } from "../lib/stores/expenseStore";
 import { z } from "zod";
 
 const homeSearchSchema = z.object({
-  month: z.string().optional(),
+  month: z.string().optional().transform((val) => {
+    // Remove any quotes from the month value
+    return val ? val.replace(/["']/g, '') : val;
+  }),
+  year: z.string().optional().transform((val) => {
+    // Remove any quotes from the year value
+    return val ? val.replace(/["']/g, '') : val;
+  }),
+  view: z.enum(["monthly", "yearly"]).optional(),
 });
 
 type HomeSearch = z.infer<typeof homeSearchSchema>;
@@ -16,27 +24,51 @@ export const Route = createFileRoute(ROUTES.HOME)({
     return homeSearchSchema.parse(search);
   },
   beforeLoad: async ({ search }) => {
-    const { month } = search as HomeSearch;
+    const { month, year, view } = search as HomeSearch;
     
-    // Get current month if not provided
-    const currentMonth =
-      month ||
-      new Date().toLocaleDateString("en-CA", {
-        year: "numeric",
-        month: "2-digit",
-      });
+    // Determine the view (default to monthly)
+    const currentView = view || "monthly";
+    
+    if (currentView === "yearly") {
+      // Get current year if not provided
+      const currentYear = year || String(new Date().getFullYear());
 
-    // Check if we already have this month cached
-    const cached = useExpenseStore.getState().getExpensesByMonth(currentMonth);
+      // Check if we already have this year cached
+      const cached = useExpenseStore.getState().getExpensesByPeriod(currentYear, "yearly");
 
-    // Only load if not cached
-    if (!cached) {
-      const expenses = await loadExpenses(currentMonth);
-      useExpenseStore.getState().setExpenses(expenses, currentMonth);
+      // Only load if not cached
+      if (!cached) {
+        const expenses = await loadYearlyExpenses(currentYear);
+        useExpenseStore.getState().setExpenses(expenses, currentYear, "yearly");
+      } else {
+        // If cached, just set it as current
+        useExpenseStore.getState().setCurrentPeriod(currentYear, "yearly");
+      }
     } else {
-      // If cached, just set it as current
-      useExpenseStore.getState().setCurrentMonth(currentMonth);
+      // Monthly view
+      // Get current month if not provided
+      const currentMonth =
+        month ||
+        new Date().toLocaleDateString("en-CA", {
+          year: "numeric",
+          month: "2-digit",
+        });
+
+      // Check if we already have this month cached
+      const cached = useExpenseStore.getState().getExpensesByPeriod(currentMonth, "monthly");
+
+      // Only load if not cached
+      if (!cached) {
+        const expenses = await loadExpenses(currentMonth);
+        useExpenseStore.getState().setExpenses(expenses, currentMonth, "monthly");
+      } else {
+        // If cached, just set it as current
+        useExpenseStore.getState().setCurrentPeriod(currentMonth, "monthly");
+      }
     }
+    
+    // Update the view in the store
+    useExpenseStore.getState().setView(currentView);
   },
   component: Home,
 });

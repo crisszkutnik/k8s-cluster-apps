@@ -5,19 +5,38 @@ import (
 
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/env"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/category"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/expense"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 )
 
 type HttpServer struct {
-	app       *fiber.App
-	dbService *database.DatabaseService
+	app                *fiber.App
+	dbService          *database.DatabaseService
+	categoryController *category.CategoryController
+	expenseController  *expense.ExpenseController
 }
 
-func NewHttpServer(databaseService *database.DatabaseService) *HttpServer {
+func NewHttpServer(
+	databaseService *database.DatabaseService,
+	categoryController *category.CategoryController,
+	expenseController *expense.ExpenseController,
+) *HttpServer {
 	app := fiber.New()
 
-	return &HttpServer{app: app, dbService: databaseService}
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
+	}))
+
+	return &HttpServer{
+		app:                app,
+		dbService:          databaseService,
+		categoryController: categoryController,
+		expenseController:  expenseController,
+	}
 }
 
 func (s *HttpServer) Start() {
@@ -26,9 +45,11 @@ func (s *HttpServer) Start() {
 }
 
 func (s *HttpServer) RegisterRouter() {
-	expenseService := expense.NewExpenseService(s.dbService)
-	expenseController := expense.NewExpenseController(expenseService)
+	// categoryGroup := s.app.Group("/category")
+	// categoryGroup.Get("/", s.categoryController.GetCategoriesByUserID)
 
-	expenseGroup := s.app.Group("/expenses")
-	expenseGroup.Get("/", expenseController.GetExpenses)
+	expenseGroup := s.app.Group("/expense")
+	expenseGroup.Get("/", s.expenseController.GetExpenses)
+	expenseGroup.Get("/insertInformation", s.expenseController.GetInsertInformation)
+	expenseGroup.Post("/", s.expenseController.AddExpense)
 }
