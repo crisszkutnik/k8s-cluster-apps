@@ -4,30 +4,43 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/env"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DatabaseService struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
 func NewDatabaseService() (*DatabaseService, error) {
-	conn, err := pgx.Connect(context.Background(), *env.DB_URL)
-
+	config, err := pgxpool.ParseConfig(*env.DB_URL)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := conn.Ping(context.Background()); err != nil {
+	config.MaxConns = 3
+	config.MinConns = 1
+	config.MaxConnLifetime = time.Hour
+	config.MaxConnIdleTime = 5 * time.Minute
+	config.HealthCheckPeriod = 1 * time.Minute
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
 		return nil, err
 	}
 
-	log.Print("database connection established")
+	if err := pool.Ping(context.Background()); err != nil {
+		pool.Close()
+		return nil, err
+	}
 
-	return &DatabaseService{conn: conn}, nil
+	log.Print("database connection pool established")
+
+	return &DatabaseService{pool: pool}, nil
 }
 
 func (s *DatabaseService) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
@@ -48,7 +61,7 @@ func (s *DatabaseService) Exec(ctx context.Context, sql string, args ...interfac
 // ============================================================================
 
 func (s *DatabaseService) GetDestinationsByUserId(userID uuid.UUID) ([]*UserExpenseSave, error) {
-	rows, err := s.conn.Query(
+	rows, err := s.pool.Query(
 		context.Background(),
 		"SELECT id, user_id, destination, info, created_date FROM public.user_expense_save WHERE user_id = $1",
 		userID,
@@ -77,7 +90,7 @@ func (s *DatabaseService) GetDestinationsByUserId(userID uuid.UUID) ([]*UserExpe
 func (s *DatabaseService) GetCategoryByName(userID uuid.UUID, categoryName string) (*Category, error) {
 	var category Category
 
-	err := s.conn.QueryRow(
+	err := s.pool.QueryRow(
 		context.Background(),
 		"SELECT id, user_id, name FROM public.category WHERE user_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1",
 		userID,
@@ -97,7 +110,7 @@ func (s *DatabaseService) GetCategoryByName(userID uuid.UUID, categoryName strin
 func (s *DatabaseService) GetSubcategoryByName(categoryID uuid.UUID, subcategoryName string) (*Subcategory, error) {
 	var subcategory Subcategory
 
-	err := s.conn.QueryRow(
+	err := s.pool.QueryRow(
 		context.Background(),
 		"SELECT id, category_id, name FROM public.subcategory WHERE category_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1",
 		categoryID,
@@ -117,7 +130,7 @@ func (s *DatabaseService) GetSubcategoryByName(categoryID uuid.UUID, subcategory
 func (s *DatabaseService) GetPaymentMethodByName(userID uuid.UUID, paymentMethodName string) (*PaymentMethod, error) {
 	var paymentMethod PaymentMethod
 
-	err := s.conn.QueryRow(
+	err := s.pool.QueryRow(
 		context.Background(),
 		"SELECT id, user_id, name FROM public.payment_method WHERE user_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1",
 		userID,
@@ -138,7 +151,7 @@ func (s *DatabaseService) GetPaymentMethodByName(userID uuid.UUID, paymentMethod
 func (s *DatabaseService) InsertExpense(expense *Expense) (uuid.UUID, error) {
 	var id uuid.UUID
 
-	err := s.conn.QueryRow(context.Background(), `
+	err := s.pool.QueryRow(context.Background(), `
 		INSERT INTO public.expense (
 			user_id,
 			description,
@@ -168,7 +181,7 @@ func (s *DatabaseService) InsertExpense(expense *Expense) (uuid.UUID, error) {
 func (s *DatabaseService) RetrieveExpenseForSheets(expenseID uuid.UUID) (*ExpenseSheetsRow, error) {
 	var expense ExpenseSheetsRow
 
-	err := s.conn.QueryRow(context.Background(), `
+	err := s.pool.QueryRow(context.Background(), `
 		SELECT
 			e.id,
 			e.date,
@@ -277,4 +290,8 @@ func collectRow(row pgx.CollectableRow) (*UserExpenseSave, error) {
 	}
 
 	return &u, nil
+}
+
+func (s *DatabaseService) Close() {
+	s.pool.Close()
 }
