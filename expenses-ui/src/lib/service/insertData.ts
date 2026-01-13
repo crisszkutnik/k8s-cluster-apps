@@ -26,11 +26,13 @@ export interface NewExpensePayload {
 
 export async function loadInsertData(): Promise<InsertData> {
   const { data } = await axios.get<InsertData>(
-    "http://localhost:3100/expense/insertInformation?withRecurrent=true"
+    `${
+      import.meta.env.VITE_API_BASE_URL
+    }/expense/insertInformation?withRecurrent=true`
   );
   return data;
 }
 
 export async function insertData(payload: NewExpensePayload) {
-  await axios.post("http://localhost:3100/expense", payload);
+  await axios.post(`${import.meta.env.VITE_API_BASE_URL}/expense`, payload);
 }

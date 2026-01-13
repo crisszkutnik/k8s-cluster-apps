@@ -1,0 +1,6 @@
+.cursor
+.pnpm-store
+.tanstack
+node_modules
+.vscode
+.env

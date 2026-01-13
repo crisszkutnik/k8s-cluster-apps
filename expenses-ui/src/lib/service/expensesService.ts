@@ -29,12 +29,15 @@ export async function loadExpenses(month?: string) {
     endDate = `${year}-${monthStr}-${String(lastDay).padStart(2, "0")}`;
   }
 
-  const { data } = await axios.get<Expense[]>("http://localhost:3100/expense", {
-    params: {
-      startDate,
-      endDate,
-    },
-  });
+  const { data } = await axios.get<Expense[]>(
+    `${import.meta.env.VITE_API_BASE_URL}/expense`,
+    {
+      params: {
+        startDate,
+        endDate,
+      },
+    }
+  );
   return data;
 }
 
@@ -53,11 +56,14 @@ export async function loadYearlyExpenses(year?: string) {
     endDate = `${currentYear}-12-31`;
   }
 
-  const { data } = await axios.get<Expense[]>("http://localhost:3100/expense", {
-    params: {
-      startDate,
-      endDate,
-    },
-  });
+  const { data } = await axios.get<Expense[]>(
+    `${import.meta.env.VITE_API_BASE_URL}/expense`,
+    {
+      params: {
+        startDate,
+        endDate,
+      },
+    }
+  );
   return data;
 }
