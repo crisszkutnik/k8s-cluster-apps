@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, Title } from "@tremor/react";
+import { useIsMobile } from "../hooks/use-mobile";
 
 interface ExpensePieChartProps {
   expenses: Array<{
@@ -30,6 +31,8 @@ export function ExpensePieChart({
   expenses,
   categories,
 }: ExpensePieChartProps) {
+  const isMobile = useIsMobile();
+
   const chartData = useMemo(() => {
     const categoryMap = new Map<string, number>();
 
@@ -74,7 +77,7 @@ export function ExpensePieChart({
         y={cy}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize="28"
+        fontSize={isMobile ? "20" : "28"}
         fontWeight="bold"
         fill="white"
       >
@@ -85,7 +88,7 @@ export function ExpensePieChart({
 
   const renderLegend = () => {
     return (
-      <ul className="space-y-2">
+      <ul className={`space-y-2 ${isMobile ? "text-xs flex flex-col items-center" : ""}`}>
         {chartData.map((item, index) => (
           <li key={item.name} className="flex items-center gap-2 text-sm">
             <span
@@ -101,50 +104,96 @@ export function ExpensePieChart({
     );
   };
 
+  const chartRadius = isMobile ? { inner: 60, outer: 100 } : { inner: 100, outer: 160 };
+
   return (
     <Card className="bg-slate-900 border border-slate-800 rounded-lg">
       <Title>Monthly expenses pie chart</Title>
-      <div className="mt-6 w-full h-[500px] flex items-center">
+      <div className={`mt-6 w-full ${isMobile ? "h-auto" : "h-[500px]"}`}>
         {chartData.length > 0 ? (
-          <>
-            <div className="w-1/4">{renderLegend()}</div>
-            <div className="w-3/4 h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={renderCenterLabel}
-                    innerRadius={100}
-                    outerRadius={160}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {chartData.map((_, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
+          <div className={`${isMobile ? "flex flex-col" : "flex items-center"}`}>
+            {isMobile ? (
+              <>
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={renderCenterLabel}
+                        innerRadius={chartRadius.inner}
+                        outerRadius={chartRadius.outer}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {chartData.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number, _, props) => {
+                          const percentage = props.payload.percentage || 0;
+                          return [`${value.toFixed(2)} (${percentage}%)`, "Amount"];
+                        }}
+                        contentStyle={{
+                          backgroundColor: "rgba(0, 0, 0, 0.8)",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          borderRadius: "8px",
+                          color: "#fff",
+                        }}
                       />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number, _, props) => {
-                      const percentage = props.payload.percentage || 0;
-                      return [`${value.toFixed(2)} (${percentage}%)`, "Amount"];
-                    }}
-                    contentStyle={{
-                      backgroundColor: "rgba(0, 0, 0, 0.8)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#fff",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-full mt-4">{renderLegend()}</div>
+              </>
+            ) : (
+              <>
+                <div className="w-1/4">{renderLegend()}</div>
+                <div className="w-3/4 h-[500px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={renderCenterLabel}
+                        innerRadius={chartRadius.inner}
+                        outerRadius={chartRadius.outer}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {chartData.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number, _, props) => {
+                          const percentage = props.payload.percentage || 0;
+                          return [`${value.toFixed(2)} (${percentage}%)`, "Amount"];
+                        }}
+                        contentStyle={{
+                          backgroundColor: "rgba(0, 0, 0, 0.8)",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          borderRadius: "8px",
+                          color: "#fff",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </div>
         ) : (
           <div className="flex items-center justify-center h-full w-full">
             <p className="text-muted-foreground">No expenses to display</p>

@@ -12,6 +12,7 @@ import {
   AreaChart,
 } from "recharts";
 import { Card, Title } from "@tremor/react";
+import { useIsMobile } from "../hooks/use-mobile";
 
 interface ExpenseLineChartsProps {
   expenses: Array<{
@@ -130,6 +131,8 @@ export function ExpenseLineCharts({
   expenses,
   categories,
 }: ExpenseLineChartsProps) {
+  const isMobile = useIsMobile();
+
   // Process data for category line chart
   const categoryLineData = useMemo(() => {
     // Group expenses by month and category
@@ -213,53 +216,97 @@ export function ExpenseLineCharts({
     });
   }, [expenses, categories]);
 
+  const renderCustomLegend = () => {
+    return (
+      <div className={`${isMobile ? "mt-4 px-2" : ""}`}>
+        <div
+          className={`flex flex-wrap gap-2 justify-center ${
+            isMobile ? "text-xs" : "text-sm gap-4"
+          }`}
+        >
+          {topCategories.map((category, index) => (
+            <div
+              key={category.id}
+              className="flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <span
+                className="w-3 h-3 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+              />
+              <span className="text-white">{category.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Category Line Chart */}
       <Card className="bg-slate-900 border border-slate-800 rounded-lg">
         <Title>All year expenses by category line chart</Title>
-        <div className="mt-6 w-full h-[400px]">
+        <div className="mt-6 w-full">
           {categoryLineData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={categoryLineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis
-                  dataKey="parsed_date"
-                  stroke="#9CA3AF"
-                  style={{ fontSize: "12px" }}
-                />
-                <YAxis
-                  stroke="#9CA3AF"
-                  style={{ fontSize: "12px" }}
-                  label={{
-                    value: "total amount",
-                    angle: -90,
-                    position: "insideLeft",
-                    style: { fill: "#9CA3AF", fontSize: "12px" },
-                  }}
-                />
-                <Tooltip
-                  content={<CustomCategoryTooltip categories={categories} />}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: "12px", paddingTop: "20px" }}
-                />
-                {topCategories.map((category, index) => (
-                  <Line
-                    key={category.id}
-                    type="monotone"
-                    dataKey={category.id}
-                    name={category.name}
-                    stroke={COLORS[index % COLORS.length]}
-                    strokeWidth={2}
-                    dot={false}
-                    connectNulls
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
+            <>
+              <div className={isMobile ? "h-[300px]" : "h-[400px]"}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={categoryLineData}
+                    margin={
+                      isMobile
+                        ? { top: 5, right: 5, left: -20, bottom: 5 }
+                        : { top: 5, right: 30, left: 20, bottom: 5 }
+                    }
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis
+                      dataKey="parsed_date"
+                      stroke="#9CA3AF"
+                      style={{ fontSize: isMobile ? "10px" : "12px" }}
+                    />
+                    <YAxis
+                      stroke="#9CA3AF"
+                      style={{ fontSize: isMobile ? "10px" : "12px" }}
+                      label={{
+                        value: "total amount",
+                        angle: -90,
+                        position: "insideLeft",
+                        style: {
+                          fill: "#9CA3AF",
+                          fontSize: isMobile ? "10px" : "12px",
+                        },
+                      }}
+                    />
+                    <Tooltip
+                      content={
+                        <CustomCategoryTooltip categories={categories} />
+                      }
+                    />
+                    {!isMobile && (
+                      <Legend
+                        wrapperStyle={{ fontSize: "12px", paddingTop: "20px" }}
+                      />
+                    )}
+                    {topCategories.map((category, index) => (
+                      <Line
+                        key={category.id}
+                        type="monotone"
+                        dataKey={category.id}
+                        name={category.name}
+                        stroke={COLORS[index % COLORS.length]}
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              {isMobile && renderCustomLegend()}
+            </>
           ) : (
-            <div className="flex items-center justify-center h-full w-full">
+            <div className="flex items-center justify-center h-[400px] w-full">
               <p className="text-muted-foreground">No expenses to display</p>
             </div>
           )}
@@ -269,10 +316,17 @@ export function ExpenseLineCharts({
       {/* Total Expenses Area Chart */}
       <Card className="bg-slate-900 border border-slate-800 rounded-lg">
         <Title>All year expenses line chart</Title>
-        <div className="mt-6 w-full h-[400px]">
+        <div className={`mt-6 w-full ${isMobile ? "h-[300px]" : "h-[400px]"}`}>
           {totalLineData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={totalLineData}>
+              <AreaChart
+                data={totalLineData}
+                margin={
+                  isMobile
+                    ? { top: 5, right: 5, left: -20, bottom: 5 }
+                    : { top: 5, right: 30, left: 20, bottom: 5 }
+                }
+              >
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#EF4444" stopOpacity={0.8} />
@@ -283,16 +337,19 @@ export function ExpenseLineCharts({
                 <XAxis
                   dataKey="parsed_date"
                   stroke="#9CA3AF"
-                  style={{ fontSize: "12px" }}
+                  style={{ fontSize: isMobile ? "10px" : "12px" }}
                 />
                 <YAxis
                   stroke="#9CA3AF"
-                  style={{ fontSize: "12px" }}
+                  style={{ fontSize: isMobile ? "10px" : "12px" }}
                   label={{
                     value: "total amount",
                     angle: -90,
                     position: "insideLeft",
-                    style: { fill: "#9CA3AF", fontSize: "12px" },
+                    style: {
+                      fill: "#9CA3AF",
+                      fontSize: isMobile ? "10px" : "12px",
+                    },
                   }}
                 />
                 <Tooltip

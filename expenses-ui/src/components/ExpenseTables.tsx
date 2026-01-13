@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Card, Title } from "@tremor/react";
 import { categorizeExpenses } from "../lib/utils";
 import type { Expense } from "../lib/types";
+import { useIsMobile } from "../hooks/use-mobile";
 
 interface ExpenseTablesProps {
   expenses: Expense[];
@@ -25,6 +26,8 @@ export function ExpenseTables({
   categories,
   paymentMethods,
 }: ExpenseTablesProps) {
+  const isMobile = useIsMobile();
+
   const { monthly, installments, recurrent } = useMemo(
     () => categorizeExpenses(expenses),
     [expenses]
@@ -156,8 +159,8 @@ export function ExpenseTables({
         rowCountLabel={`${enrichedMonthly.length} rows`}
       />
 
-      {/* Installments Table */}
-      <div className="grid grid-cols-2 gap-6">
+      {/* Installments and Fixed Tables */}
+      <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
         <TableComponent
           title="Monthly installments table"
           data={enrichedInstallments}
