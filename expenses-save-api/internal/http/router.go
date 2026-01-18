@@ -7,6 +7,7 @@ import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/env"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/category"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/expense"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 )
@@ -28,7 +29,7 @@ func NewHttpServer(
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization", "internal-user-id"},
 	}))
 
 	return &HttpServer{
@@ -45,6 +46,9 @@ func (s *HttpServer) Start() {
 }
 
 func (s *HttpServer) RegisterRouter() {
+	// Apply user ID middleware to all routes
+	s.app.Use(middleware.UserIDMiddleware())
+
 	// categoryGroup := s.app.Group("/category")
 	// categoryGroup.Get("/", s.categoryController.GetCategoriesByUserID)
 

@@ -2,8 +2,8 @@ package category
 
 import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/middleware"
 	"github.com/gofiber/fiber/v3"
-	"github.com/google/uuid"
 )
 
 type CategoryController struct {
@@ -17,5 +17,10 @@ func NewCategoryController(categoryService *CategoryService) *CategoryController
 }
 
 func (s *CategoryController) GetCategoriesByUserID(ctx fiber.Ctx) ([]database.Category, error) {
-	return s.categoryService.GetCategoriesByUserID(ctx, uuid.MustParse("01961fcb-6ff5-727f-82d9-09b22b437a0d"))
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.categoryService.GetCategoriesByUserID(ctx, userID)
 }

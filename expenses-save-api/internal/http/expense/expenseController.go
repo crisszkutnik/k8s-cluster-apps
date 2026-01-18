@@ -1,9 +1,9 @@
 package expense
 
 import (
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
-	"github.com/google/uuid"
 )
 
 type ExpenseController struct {
@@ -17,14 +17,10 @@ func NewExpenseController(expenseService *ExpenseService) *ExpenseController {
 }
 
 func (c *ExpenseController) GetInsertInformation(ctx fiber.Ctx) error {
-	// userID, err := uuid.Parse(ctx.Params("userId"))
-	userID := uuid.MustParse("01961fcb-6ff5-727f-82d9-09b22b437a0d")
-
-	/*
-		if err != nil {
-			return ctx.Status(400).JSON(fiber.Map{"error": "invalid user id"})
-		}
-	*/
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user ID not found in context"})
+	}
 
 	withRecurrent := ctx.Query("withRecurrent", "false") == "true"
 
@@ -38,8 +34,10 @@ func (c *ExpenseController) GetInsertInformation(ctx fiber.Ctx) error {
 }
 
 func (c *ExpenseController) AddExpense(ctx fiber.Ctx) error {
-	// TODO: Replace with actual user ID from auth/context
-	userID := uuid.MustParse("01961fcb-6ff5-727f-82d9-09b22b437a0d")
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user ID not found in context"})
+	}
 
 	var payload ExpensePayload
 	if err := ctx.Bind().Body(&payload); err != nil {
@@ -63,8 +61,11 @@ func (c *ExpenseController) AddExpense(ctx fiber.Ctx) error {
 }
 
 func (c *ExpenseController) GetExpenses(ctx fiber.Ctx) error {
-	// TODO: Replace with actual user ID from auth/context
-	userID := uuid.MustParse("01961fcb-6ff5-727f-82d9-09b22b437a0d")
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user ID not found in context"})
+	}
+
 	log.Info("Payload received")
 
 	startDate := ctx.Query("startDate")
