@@ -10,14 +10,13 @@ interface YearPickerProps {
 export function YearPicker({ currentYear }: YearPickerProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Parse current year
   const year = parseInt(currentYear);
-  const currentYearDate = new Date(year, 0, 1);
-  
+
   // Calculate the decade to show (e.g., 2020-2029)
   const [decadeStart, setDecadeStart] = useState(Math.floor(year / 10) * 10);
-  
+
   const handleYearSelect = (selectedYear: number) => {
     void router.navigate({
       to: "/",
@@ -26,18 +25,18 @@ export function YearPicker({ currentYear }: YearPickerProps) {
     });
     setIsOpen(false);
   };
-  
+
   const handlePreviousDecade = () => {
     setDecadeStart(decadeStart - 10);
   };
-  
+
   const handleNextDecade = () => {
     setDecadeStart(decadeStart + 10);
   };
-  
+
   // Generate array of years for the current decade
   const years = Array.from({ length: 12 }, (_, i) => decadeStart + i - 1);
-  
+
   return (
     <div className="relative">
       <Button
@@ -78,7 +77,8 @@ export function YearPicker({ currentYear }: YearPickerProps) {
           <div className="grid grid-cols-3 gap-2">
             {years.map((yearValue) => {
               const isCurrentYear = yearValue === year;
-              const isOutOfRange = yearValue < decadeStart || yearValue > decadeStart + 9;
+              const isOutOfRange =
+                yearValue < decadeStart || yearValue > decadeStart + 9;
 
               return (
                 <button
@@ -112,4 +112,3 @@ export function YearPicker({ currentYear }: YearPickerProps) {
     </div>
   );
 }
-
