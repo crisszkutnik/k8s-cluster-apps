@@ -6,6 +6,7 @@ set -o pipefail
 
 : "${VITE_API_BASE_URL:?VITE_API_BASE_URL environment variable must be set}"
 : "${VITE_TANSTACK_BASE_URL:?VITE_TANSTACK_BASE_URL environment variable must be set}"
+: "${VITE_BASE_URL:?VITE_BASE_URL environment variable must be set}"
 
 if [ "$VITE_API_BASE_URL" = "__VITE_API_BASE_URL__" ]; then
   echo "ERROR: VITE_API_BASE_URL is still a placeholder. Set the actual value."
@@ -14,6 +15,11 @@ fi
 
 if [ "$VITE_TANSTACK_BASE_URL" = "__VITE_TANSTACK_BASE_URL__" ]; then
   echo "ERROR: VITE_TANSTACK_BASE_URL is still a placeholder. Set the actual value."
+  exit 1
+fi
+
+if [ "$VITE_BASE_URL" = "__VITE_BASE_URL__" ]; then
+  echo "ERROR: VITE_BASE_URL is still a placeholder. Set the actual value."
   exit 1
 fi
 

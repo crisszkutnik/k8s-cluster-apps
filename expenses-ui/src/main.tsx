@@ -6,7 +6,11 @@ import "./index.css";
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
 
-const router = createRouter({ routeTree });
+const router = createRouter({
+  routeTree,
+  scrollRestoration: true,
+  basepath: import.meta.env.VITE_TANSTACK_BASE_URL,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
