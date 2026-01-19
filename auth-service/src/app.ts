@@ -2,6 +2,7 @@ import { join } from "node:path";
 import AutoLoad, { AutoloadPluginOptions } from "@fastify/autoload";
 import { FastifyPluginAsync, FastifyServerOptions } from "fastify";
 import fastifyEnv from "@fastify/env";
+import Fastify from "fastify";
 
 export interface AppOptions
   extends FastifyServerOptions,
@@ -46,28 +47,18 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify,
   opts
 ): Promise<void> => {
-  // Load environment variables
   await fastify.register(fastifyEnv, {
     schema: envSchema,
     dotenv: true,
   });
 
-  // Place here your custom code!
-
-  // Do not touch the following lines
-
-  // This loads all plugins defined in plugins
-  // those should be support plugins that are reused
-  // through your application
-  // eslint-disable-next-line no-void
+  // load plugins from the /plugins folder
   void fastify.register(AutoLoad, {
     dir: join(__dirname, "plugins"),
     options: opts,
   });
 
-  // This loads all plugins defined in routes
-  // define your routes in one of these
-  // eslint-disable-next-line no-void
+  // load routes from /routes
   void fastify.register(AutoLoad, {
     dir: join(__dirname, "routes"),
     options: opts,
@@ -76,3 +67,29 @@ const app: FastifyPluginAsync<AppOptions> = async (
 
 export default app;
 export { app, options };
+
+// Check if this file is being run directly (not imported as a module)
+if (require.main === module) {
+  const start = async () => {
+    const fastify = Fastify({
+      logger: true,
+      ...options,
+    });
+
+    try {
+      await fastify.register(app, options);
+
+      const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+      const host = process.env.HOST || "0.0.0.0";
+
+      await fastify.listen({ port, host });
+
+      fastify.log.info(`Server is running on http://${host}:${port}`);
+    } catch (err) {
+      fastify.log.error(err);
+      process.exit(1);
+    }
+  };
+
+  start();
+}

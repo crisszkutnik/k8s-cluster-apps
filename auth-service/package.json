@@ -1,6 +1,6 @@
 {
   "name": "auth-service",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
   "directories": {
@@ -12,7 +12,8 @@
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
-    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js"
+    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js",
+    "docker": "docker build . -t auth-service-local"
   },
   "keywords": [],
   "author": "",
@@ -35,5 +36,13 @@
     "fastify-tsconfig": "^3.0.0",
     "ts-node": "^10.4.0",
     "typescript": "~5.9.2"
-  }
+  },
+  "volta": {
+    "node": "25.3.0"
+  },
+  "engines": {
+    "node": "25.3.0",
+    "pnpm": "10.28.0"
+  },
+  "packageManager": "pnpm@10.28.0"
 }
