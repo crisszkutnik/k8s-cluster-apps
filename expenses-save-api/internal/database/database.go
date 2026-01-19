@@ -43,6 +43,23 @@ func NewDatabaseService() (*DatabaseService, error) {
 	return &DatabaseService{pool: pool}, nil
 }
 
+func (s *DatabaseService) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+	return s.pool.QueryRow(ctx, sql, args...)
+}
+
+func (s *DatabaseService) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	return s.pool.Query(ctx, sql, args...)
+}
+
+func (s *DatabaseService) Exec(ctx context.Context, sql string, args ...interface{}) error {
+	_, err := s.pool.Exec(ctx, sql, args...)
+	return err
+}
+
+// ============================================================================
+// Legacy Methods (kept for backward compatibility)
+// ============================================================================
+
 func (s *DatabaseService) GetDestinationsByUserId(userID uuid.UUID) ([]*UserExpenseSave, error) {
 	rows, err := s.pool.Query(
 		context.Background(),
@@ -130,6 +147,7 @@ func (s *DatabaseService) GetPaymentMethodByName(userID uuid.UUID, paymentMethod
 	return &paymentMethod, nil
 }
 
+// Deprecated: Use ExpenseRepository.Insert instead
 func (s *DatabaseService) InsertExpense(expense *Expense) (uuid.UUID, error) {
 	var id uuid.UUID
 

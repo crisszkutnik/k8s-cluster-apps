@@ -15,6 +15,7 @@ var (
 	DB_URL               *string
 	STOCK_MARKET_API_URL *string
 	EXCHANGE_RATE_TTL    *int8 // in minutes
+	HTTP_PORT            *string
 )
 
 func LoadEnv() {
@@ -29,6 +30,7 @@ func LoadEnv() {
 	loadStr(&DB_URL, "DB_URL")
 	loadStr(&STOCK_MARKET_API_URL, "STOCK_MARKET_API_URL")
 	loadInt8(&EXCHANGE_RATE_TTL, "EXCHANGE_RATE_TTL")
+	loadStr(&HTTP_PORT, "HTTP_PORT")
 }
 
 func setPort() {

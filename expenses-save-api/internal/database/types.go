@@ -24,15 +24,17 @@ type UserExpenseSave struct {
 
 // This is the actual expense
 type Expense struct {
-	ID              uuid.UUID  `db:"id"`
-	UserID          uuid.UUID  `db:"user_id"`
-	Description     string     `db:"description"`
-	PaymentMethodID uuid.UUID  `db:"payment_method_id"`
-	ARSAmount       float64    `db:"ars_amount"`
-	USDAmount       float64    `db:"usd_amount"`
-	CategoryID      uuid.UUID  `db:"category_id"`
-	SubcategoryID   *uuid.UUID `db:"subcategory_id"`
-	Date            time.Time  `db:"date"`
+	ID                     uuid.UUID  `db:"id" json:"id"`
+	UserID                 uuid.UUID  `db:"user_id" json:"userId"`
+	Description            string     `db:"description" json:"description"`
+	PaymentMethodID        uuid.UUID  `db:"payment_method_id" json:"paymentMethodId"`
+	ARSAmount              float64    `db:"ars_amount" json:"arsAmount"`
+	USDAmount              float64    `db:"usd_amount" json:"usdAmount"`
+	CategoryID             uuid.UUID  `db:"category_id" json:"categoryId"`
+	SubcategoryID          *uuid.UUID `db:"subcategory_id" json:"subcategoryId"`
+	RecurrentExpenseID     *uuid.UUID `db:"recurrent_expense_id" json:"recurrentExpenseId"`
+	InstallementsExpenseID *uuid.UUID `db:"installements_expense_id" json:"installementsExpenseId"`
+	Date                   time.Time  `db:"date" json:"date"`
 }
 
 type ExpenseSheetsRow struct {
@@ -48,21 +50,35 @@ type ExpenseSheetsRow struct {
 }
 
 type Category struct {
-	Id     uuid.UUID `db:"id"`
-	UserID uuid.UUID `db:"user_id"`
-	Name   string    `db:"name"`
+	Id     uuid.UUID `db:"id" json:"id"`
+	UserID uuid.UUID `db:"user_id" json:"userId"`
+	Name   string    `db:"name" json:"name"`
 }
 
 type Subcategory struct {
-	Id         uuid.UUID `db:"id"`
-	CategoryID uuid.UUID `db:"category_id"`
-	Name       string    `db:"name"`
+	Id         uuid.UUID `db:"id" json:"id"`
+	CategoryID uuid.UUID `db:"category_id" json:"categoryId"`
+	Name       string    `db:"name" json:"name"`
 }
 
 type PaymentMethod struct {
-	Id     uuid.UUID `db:"id"`
-	UserID uuid.UUID `db:"user_id"`
-	Name   string    `db:"name"`
+	Id     uuid.UUID `db:"id" json:"id"`
+	UserID uuid.UUID `db:"user_id" json:"userId"`
+	Name   string    `db:"name" json:"name"`
+}
+
+type RecurrentExpense struct {
+	ID              uuid.UUID  `db:"id" json:"id"`
+	UserID          uuid.UUID  `db:"user_id" json:"userId"`
+	Description     string     `db:"description" json:"description"`
+	PaymentMethodID uuid.UUID  `db:"payment_method_id" json:"paymentMethodId"`
+	ARSAmount       *float64   `db:"ars_amount" json:"arsAmount"`
+	USDAmount       *float64   `db:"usd_amount" json:"usdAmount"`
+	CategoryID      uuid.UUID  `db:"category_id" json:"categoryId"`
+	SubcategoryID   *uuid.UUID `db:"subcategory_id" json:"subcategoryId"`
+	StartDate       time.Time  `db:"start_date" json:"startDate"`
+	EndDate         *time.Time `db:"end_date" json:"endDate"`
+	CreatedDate     time.Time  `db:"created_date" json:"createdDate"`
 }
 
 type GoogleSheetsInfo struct {

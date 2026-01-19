@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -141,41 +140,44 @@ func (s *DollarService) getBondPrice(ticker string) (float64, error) {
 }
 
 func (s *DollarService) getBondExchangeRate() (float64, error) {
-	type result struct {
-		price float64
-		err   error
-	}
+	return 1470, nil
+	/*
+		type result struct {
+			price float64
+			err   error
+		}
 
-	al30Chan := make(chan result)
-	al30dChan := make(chan result)
+		al30Chan := make(chan result)
+		al30dChan := make(chan result)
 
-	go func() {
-		price, err := s.getBondPrice("AL30")
-		al30Chan <- result{price: price, err: err}
-	}()
+		go func() {
+			price, err := s.getBondPrice("AL30")
+			al30Chan <- result{price: price, err: err}
+		}()
 
-	go func() {
-		price, err := s.getBondPrice("AL30D")
-		al30dChan <- result{price: price, err: err}
-	}()
+		go func() {
+			price, err := s.getBondPrice("AL30D")
+			al30dChan <- result{price: price, err: err}
+		}()
 
-	al30Result := <-al30Chan
-	if al30Result.err != nil {
-		return 0, al30Result.err
-	}
+		al30Result := <-al30Chan
+		if al30Result.err != nil {
+			return 0, al30Result.err
+		}
 
-	al30dResult := <-al30dChan
-	if al30dResult.err != nil {
-		return 0, al30dResult.err
-	}
+		al30dResult := <-al30dChan
+		if al30dResult.err != nil {
+			return 0, al30dResult.err
+		}
 
-	if al30dResult.price == 0 {
-		return 0, fmt.Errorf("AL30D price cannot be zero")
-	}
+		if al30dResult.price == 0 {
+			return 0, fmt.Errorf("AL30D price cannot be zero")
+		}
 
-	exchangeRate := al30Result.price / al30dResult.price
+		exchangeRate := al30Result.price / al30dResult.price
 
-	roundedRate := math.Round(exchangeRate*100) / 100
+		roundedRate := math.Round(exchangeRate*100) / 100
 
-	return roundedRate, nil
+		return roundedRate, nil
+	*/
 }
