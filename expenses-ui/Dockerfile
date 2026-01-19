@@ -1,13 +1,10 @@
 # syntax=docker/dockerfile:1.6
 
-FROM node:24-alpine AS builder
+FROM node:25.3.0-slim AS builder
 
 WORKDIR /app
 
-ENV PNPM_HOME=/usr/local/share/pnpm
-ENV PATH="$PNPM_HOME:$PATH"
-
-RUN corepack enable
+RUN npm install -g pnpm@10.28.0
 
 COPY package.json pnpm-lock.yaml* ./
 
@@ -24,7 +21,7 @@ ENV VITE_TANSTACK_BASE_URL=${VITE_TANSTACK_BASE_URL}
 
 RUN pnpm build
 
-FROM nginx:1.27-alpine AS runner
+FROM nginx:1.29-alpine AS runner
 
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

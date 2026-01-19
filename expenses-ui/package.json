@@ -7,8 +7,17 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker": "docker build . -t expenses-ui-local"
   },
+  "volta": {
+    "node": "25.3.0"
+  },
+  "engines": {
+    "node": "25.3.0",
+    "pnpm": "10.28.0"
+  },
+  "packageManager": "pnpm@10.28.0",
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-popover": "^1.1.15",
