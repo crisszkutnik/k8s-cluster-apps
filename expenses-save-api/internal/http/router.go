@@ -10,6 +10,7 @@ import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/logger"
 )
 
 type HttpServer struct {
@@ -25,6 +26,9 @@ func NewHttpServer(
 	expenseController *expense.ExpenseController,
 ) *HttpServer {
 	app := fiber.New()
+	app.Use(logger.New(logger.Config{
+		DisableColors: true,
+	}))
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"},
