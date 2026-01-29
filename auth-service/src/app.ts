@@ -5,8 +5,7 @@ import fastifyEnv from "@fastify/env";
 import Fastify from "fastify";
 
 export interface AppOptions
-  extends FastifyServerOptions,
-    Partial<AutoloadPluginOptions> {}
+  extends FastifyServerOptions, Partial<AutoloadPluginOptions> {}
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -45,12 +44,33 @@ const envSchema = {
 
 const app: FastifyPluginAsync<AppOptions> = async (
   fastify,
-  opts
+  opts,
 ): Promise<void> => {
   await fastify.register(fastifyEnv, {
     schema: envSchema,
     dotenv: true,
   });
+
+  /*
+    By default NGINX will not forward the body of the requests, so we need to avoid
+    'application/json' requests that have empty body
+
+    If we need to inspect the body, we will need to make changes in NGINX
+  */
+  fastify.addContentTypeParser(
+    "application/json",
+    { parseAs: "string" },
+    (req, body, done) => {
+      try {
+        const bodyStr = typeof body === "string" ? body : String(body);
+        const json = bodyStr === "" ? {} : JSON.parse(bodyStr);
+        done(null, json);
+      } catch (err: any) {
+        err.statusCode = 400;
+        done(err, undefined);
+      }
+    },
+  );
 
   // load plugins from the /plugins folder
   void fastify.register(AutoLoad, {
