@@ -50,7 +50,7 @@ func main() {
 
 	// Services
 	categoryService := category.NewCategoryService(categoryRepo)
-	expenseService := expense.NewExpenseService(categoryRepo, subcategoryRepo, paymentMethodRepo, recurrentExpenseRepo, expenseRepo)
+	expenseService := expense.NewExpenseService(categoryRepo, subcategoryRepo, paymentMethodRepo, recurrentExpenseRepo, expenseRepo, dollarService)
 
 	// Controllers
 	categoryController := category.NewCategoryController(categoryService)

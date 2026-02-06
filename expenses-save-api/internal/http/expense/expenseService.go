@@ -7,6 +7,7 @@ import (
 
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database/repository"
+	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/dollar"
 	"github.com/google/uuid"
 )
 
@@ -16,6 +17,7 @@ type ExpenseService struct {
 	paymentMethodRepo    *repository.PaymentMethodRepository
 	recurrentExpenseRepo *repository.RecurrentExpenseRepository
 	expenseRepo          *repository.ExpenseRepository
+	dollarService        *dollar.DollarService
 }
 
 type ExpenseInsertInformationResponse struct {
@@ -23,6 +25,7 @@ type ExpenseInsertInformationResponse struct {
 	Subcategories     []database.Subcategory      `json:"subcategories"`
 	PaymentMethods    []database.PaymentMethod    `json:"paymentMethods"`
 	RecurrentExpenses []database.RecurrentExpense `json:"recurrentExpenses"`
+	UsdArsFx          float64                     `json:"usdArsFx"`
 }
 
 type ExpensePayload struct {
@@ -54,6 +57,7 @@ func NewExpenseService(
 	paymentMethodRepo *repository.PaymentMethodRepository,
 	recurrentExpenseRepo *repository.RecurrentExpenseRepository,
 	expenseRepo *repository.ExpenseRepository,
+	dollarService *dollar.DollarService,
 ) *ExpenseService {
 	return &ExpenseService{
 		categoryRepo:         categoryRepo,
@@ -61,6 +65,7 @@ func NewExpenseService(
 		paymentMethodRepo:    paymentMethodRepo,
 		recurrentExpenseRepo: recurrentExpenseRepo,
 		expenseRepo:          expenseRepo,
+		dollarService:        dollarService,
 	}
 }
 
@@ -97,11 +102,18 @@ func (s *ExpenseService) GetExpenseInsertInformation(
 		}
 	}
 
+	usdArsFx, err := s.dollarService.GetExchangeRate()
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &ExpenseInsertInformationResponse{
 		PaymentMethods:    paymentMethods,
 		Categories:        categories,
 		Subcategories:     subcategories,
 		RecurrentExpenses: recurrentExpenses,
+		UsdArsFx:          usdArsFx,
 	}, nil
 }
 

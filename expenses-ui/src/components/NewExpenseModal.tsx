@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ArrowRightLeft } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import { useCategoryStore } from "../lib/stores/categoryStore";
 import { useSubcategoryStore } from "../lib/stores/subcategoryStore";
 import { usePaymentMethodStore } from "../lib/stores/paymentMethodStore";
 import { useRecurrentExpenseStore } from "../lib/stores/recurrentExpenseStore";
-import { insertData, type NewExpensePayload } from "../lib/service/insertData";
+import { insertData, loadInsertData, type NewExpensePayload } from "../lib/service/insertData";
 import { toast } from "../lib/stores/toastStore";
 
 interface ExpenseFormData {
@@ -54,6 +54,7 @@ export function NewExpenseModal() {
   const [selectedRecurrentId, setSelectedRecurrentId] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fxRate, setFxRate] = useState<number>(0);
 
   const { categories } = useCategoryStore();
   const { subcategories } = useSubcategoryStore();
@@ -93,6 +94,14 @@ export function NewExpenseModal() {
       setErrors({});
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && fxRate === 0) {
+      loadInsertData().then((data) => {
+        setFxRate(data.usdArsFx);
+      });
+    }
+  }, [open, fxRate]);
 
   // Reset subcategory when category changes
   useEffect(() => {
@@ -208,6 +217,20 @@ export function NewExpenseModal() {
     if (field === "categoryId") clearError("categoryId");
   };
 
+  const convertArsToUsd = () => {
+    if (formData.arsAmount && fxRate > 0) {
+      const usdValue = parseFloat(formData.arsAmount) / fxRate;
+      updateField("usdAmount", usdValue.toFixed(2));
+    }
+  };
+
+  const convertUsdToArs = () => {
+    if (formData.usdAmount && fxRate > 0) {
+      const arsValue = parseFloat(formData.usdAmount) * fxRate;
+      updateField("arsAmount", arsValue.toFixed(2));
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -258,9 +281,35 @@ export function NewExpenseModal() {
 
           {/* Amounts */}
           <div className="space-y-2">
+            <div className="flex items-center justify-between mb-2">
+              <Label>Amounts</Label>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>FX Rate:</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={fxRate}
+                  onChange={(e) => setFxRate(parseFloat(e.target.value) || 0)}
+                  className="w-24 h-7 text-sm"
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="arsAmount">ARS Amount</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="arsAmount" className="flex-1">ARS Amount</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={convertArsToUsd}
+                    disabled={!formData.arsAmount || fxRate === 0}
+                    title="Convert ARS to USD"
+                  >
+                    <ArrowRightLeft size={14} />
+                  </Button>
+                </div>
                 <Input
                   id="arsAmount"
                   type="number"
@@ -272,7 +321,20 @@ export function NewExpenseModal() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="usdAmount">USD Amount</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={convertUsdToArs}
+                    disabled={!formData.usdAmount || fxRate === 0}
+                    title="Convert USD to ARS"
+                  >
+                    <ArrowRightLeft size={14} />
+                  </Button>
+                  <Label htmlFor="usdAmount" className="flex-1">USD Amount</Label>
+                </div>
                 <Input
                   id="usdAmount"
                   type="number"

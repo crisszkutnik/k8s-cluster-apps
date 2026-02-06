@@ -11,6 +11,7 @@ interface InsertData {
   subcategories: Subcategory[];
   paymentMethods: PaymentMethod[];
   recurrentExpenses: RecurrentExpense[];
+  usdArsFx: number;
 }
 
 export interface NewExpensePayload {
@@ -28,7 +29,7 @@ export async function loadInsertData(): Promise<InsertData> {
   const { data } = await axios.get<InsertData>(
     `${
       import.meta.env.VITE_API_BASE_URL
-    }/expense/insertInformation?withRecurrent=true`
+    }/expense/insertInformation?withRecurrent=true`,
   );
   return data;
 }
