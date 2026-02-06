@@ -4,6 +4,7 @@ import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
+	"github.com/google/uuid"
 )
 
 type ExpenseController struct {
@@ -86,4 +87,60 @@ func (c *ExpenseController) GetExpenses(ctx fiber.Ctx) error {
 
 	log.Info("Query ended")
 	return ctx.Status(fiber.StatusOK).JSON(expenses)
+}
+
+func (c *ExpenseController) UpdateExpense(ctx fiber.Ctx) error {
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user ID not found in context"})
+	}
+
+	expenseIDStr := ctx.Params("id")
+	expenseID, err := uuid.Parse(expenseIDStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid expense ID"})
+	}
+
+	var payload ExpensePayload
+	if err := ctx.Bind().Body(&payload); err != nil {
+		log.Error(err)
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	}
+
+	if payload.ArsAmount == 0 || payload.UsdAmount == 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ARS and USD have to be greater than 0"})
+	}
+
+	response, err := c.expenseService.UpdateExpense(ctx.Context(), userID, expenseID, &payload)
+	if err != nil {
+		log.Error(err)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	log.Info("Updated expense")
+
+	return ctx.Status(fiber.StatusOK).JSON(response)
+}
+
+func (c *ExpenseController) DeleteExpense(ctx fiber.Ctx) error {
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user ID not found in context"})
+	}
+
+	expenseIDStr := ctx.Params("id")
+	expenseID, err := uuid.Parse(expenseIDStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid expense ID"})
+	}
+
+	err = c.expenseService.DeleteExpense(ctx.Context(), userID, expenseID)
+	if err != nil {
+		log.Error(err)
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	log.Info("Deleted expense")
+
+	return ctx.Status(fiber.StatusNoContent).Send(nil)
 }

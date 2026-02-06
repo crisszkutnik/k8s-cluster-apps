@@ -60,4 +60,6 @@ func (s *HttpServer) RegisterRouter() {
 	expenseGroup.Get("/", s.expenseController.GetExpenses)
 	expenseGroup.Get("/insertInformation", s.expenseController.GetInsertInformation)
 	expenseGroup.Post("/", s.expenseController.AddExpense)
+	expenseGroup.Patch("/:id", s.expenseController.UpdateExpense)
+	expenseGroup.Delete("/:id", s.expenseController.DeleteExpense)
 }

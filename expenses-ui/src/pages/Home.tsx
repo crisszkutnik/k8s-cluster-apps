@@ -11,6 +11,7 @@ import { ExpenseTables } from "../components/ExpenseTables";
 import { categorizeExpenses } from "../lib/utils";
 import { useRouter } from "@tanstack/react-router";
 import { useIsMobile } from "../hooks/use-mobile";
+import { loadExpenses, loadYearlyExpenses } from "../lib/service/expensesService";
 
 export function Home() {
   const router = useRouter();
@@ -20,15 +21,27 @@ export function Home() {
   const currentMonth = useExpenseStore((state) => state.currentMonth);
   const currentYear = useExpenseStore((state) => state.currentYear);
   const view = useExpenseStore((state) => state.view);
+  const setExpenses = useExpenseStore((state) => state.setExpenses);
+  const invalidateCache = useExpenseStore((state) => state.invalidateCache);
   const isMobile = useIsMobile();
 
-  // Categorize expenses using utility function
+  const handleExpenseChange = async () => {
+    if (view === "monthly") {
+      invalidateCache(currentMonth, "monthly");
+      const expenses = await loadExpenses(currentMonth);
+      setExpenses(expenses, currentMonth, "monthly");
+    } else {
+      invalidateCache(currentYear, "yearly");
+      const expenses = await loadYearlyExpenses(currentYear);
+      setExpenses(expenses, currentYear, "yearly");
+    }
+  };
+
   const { monthly, installments, recurrent } = useMemo(
     () => categorizeExpenses(expenses),
     [expenses]
   );
 
-  // Handle view toggle
   const handleViewChange = (newView: "monthly" | "yearly") => {
     if (newView === "monthly") {
       const month =
@@ -54,7 +67,6 @@ export function Home() {
     }
   };
 
-  // Calculate KPI values using categorized expenses
   const arsTotal = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + (expense.arsAmount || 0), 0);
   }, [expenses]);
@@ -101,14 +113,12 @@ export function Home() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
-      {/* Header with View Switcher and Period Selector */}
       <div className={`flex ${isMobile ? "flex-col gap-4" : "justify-between items-center"}`}>
         <div>
           <h1 className={`font-bold ${isMobile ? "text-2xl" : "text-3xl"}`}>Dashboard</h1>
           <p className="text-muted-foreground">Overview of your expenses</p>
         </div>
         <div className={`flex gap-4 ${isMobile ? "flex-col w-full" : "items-center"}`}>
-          {/* View Switcher */}
           <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-1">
             <button
               onClick={() => handleViewChange("monthly")}
@@ -132,7 +142,6 @@ export function Home() {
             </button>
           </div>
 
-          {/* Period Selector */}
           {view === "monthly" ? (
             <MonthPicker currentMonth={currentMonth} />
           ) : (
@@ -141,7 +150,6 @@ export function Home() {
         </div>
       </div>
 
-      {/* ARS KPI Cards */}
       <div>
         <h2 className="text-lg font-semibold mb-4">ARS</h2>
         <div className={isMobile ? "overflow-x-auto -mx-4 px-4" : ""}>
@@ -174,7 +182,6 @@ export function Home() {
         </div>
       </div>
 
-      {/* USD KPI Cards */}
       <div>
         <h2 className="text-lg font-semibold mb-4">USD</h2>
         <div className={isMobile ? "overflow-x-auto -mx-4 px-4" : ""}>
@@ -213,26 +220,22 @@ export function Home() {
         </div>
       </div>
 
-      {/* Charts - conditional based on view */}
       {view === "yearly" ? (
         <>
-          {/* Line Charts for Yearly View */}
           <ExpenseLineCharts expenses={expenses} categories={categories} />
-          {/* Pie Chart */}
           <ExpensePieChart expenses={expenses} categories={categories} />
         </>
       ) : (
         <>
-          {/* Pie Chart for Monthly View */}
           <ExpensePieChart expenses={expenses} categories={categories} />
         </>
       )}
 
-      {/* Tables - shown in both views */}
       <ExpenseTables
         expenses={expenses}
         categories={categories}
         paymentMethods={paymentMethods}
+        onExpenseUpdated={handleExpenseChange}
       />
     </div>
   );

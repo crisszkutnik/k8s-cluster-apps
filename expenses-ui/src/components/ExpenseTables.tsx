@@ -3,6 +3,8 @@ import { Card, Title } from "@tremor/react";
 import { categorizeExpenses } from "../lib/utils";
 import type { Expense } from "../lib/types";
 import { useIsMobile } from "../hooks/use-mobile";
+import { EditExpenseModal } from "./EditExpenseModal";
+import { DeleteExpenseDialog } from "./DeleteExpenseDialog";
 
 interface ExpenseTablesProps {
   expenses: Expense[];
@@ -14,6 +16,7 @@ interface ExpenseTablesProps {
     id: string;
     name: string;
   }>;
+  onExpenseUpdated?: () => void;
 }
 
 interface EnrichedExpense extends Expense {
@@ -25,6 +28,7 @@ export function ExpenseTables({
   expenses,
   categories,
   paymentMethods,
+  onExpenseUpdated,
 }: ExpenseTablesProps) {
   const isMobile = useIsMobile();
 
@@ -33,7 +37,6 @@ export function ExpenseTables({
     [expenses]
   );
 
-  // Enrich expenses with category and payment method names
   const enrichExpense = (expense: Expense): EnrichedExpense => {
     const category = categories.find((c) => c.id === expense.categoryId);
     const paymentMethod = paymentMethods.find(
@@ -107,6 +110,9 @@ export function ExpenseTables({
               <th className="text-left py-3 px-4 text-blue-400 font-medium">
                 date
               </th>
+              <th className="text-right py-3 px-4 text-blue-400 font-medium">
+                actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -132,11 +138,23 @@ export function ExpenseTables({
                   <td className="py-3 px-4 text-white">
                     {formatDate(expense.date)}
                   </td>
+                  <td className="py-3 px-4 text-white">
+                    <div className="flex items-center justify-end gap-2">
+                      <EditExpenseModal 
+                        expense={expense} 
+                        onExpenseUpdated={onExpenseUpdated}
+                      />
+                      <DeleteExpenseDialog 
+                        expense={expense}
+                        onExpenseDeleted={onExpenseUpdated}
+                      />
+                    </div>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-gray-400">
+                <td colSpan={7} className="py-8 text-center text-gray-400">
                   No expenses to display
                 </td>
               </tr>
@@ -152,14 +170,12 @@ export function ExpenseTables({
 
   return (
     <div className="space-y-6">
-      {/* Monthly Expenses Table */}
       <TableComponent
         title="Monthly expenses table"
         data={enrichedMonthly}
         rowCountLabel={`${enrichedMonthly.length} rows`}
       />
 
-      {/* Installments and Fixed Tables */}
       <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
         <TableComponent
           title="Monthly installments table"
@@ -167,7 +183,6 @@ export function ExpenseTables({
           rowCountLabel={`${enrichedInstallments.length} rows`}
         />
 
-        {/* Fixed/Recurrent Table */}
         <TableComponent
           title="Monthly fixed table"
           data={enrichedRecurrent}

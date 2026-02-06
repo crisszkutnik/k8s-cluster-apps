@@ -23,6 +23,7 @@ interface ExpenseStoreState {
   ) => Expense[] | null;
   setCurrentPeriod: (period: string, view: "monthly" | "yearly") => void;
   setView: (view: "monthly" | "yearly") => void;
+  invalidateCache: (period: string, view: "monthly" | "yearly") => void;
 }
 
 export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
@@ -98,5 +99,31 @@ export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
 
   setView: (view: "monthly" | "yearly") => {
     set({ view });
+  },
+
+  invalidateCache: (period: string, view: "monthly" | "yearly") => {
+    if (view === "monthly") {
+      set((state) => {
+        const newMonthly = { ...state.cache.monthly };
+        delete newMonthly[period];
+        return {
+          cache: {
+            ...state.cache,
+            monthly: newMonthly,
+          },
+        };
+      });
+    } else {
+      set((state) => {
+        const newYearly = { ...state.cache.yearly };
+        delete newYearly[period];
+        return {
+          cache: {
+            ...state.cache,
+            yearly: newYearly,
+          },
+        };
+      });
+    }
   },
 }));

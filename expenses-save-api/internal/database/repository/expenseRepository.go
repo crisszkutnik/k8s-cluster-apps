@@ -131,3 +131,107 @@ func (r *ExpenseRepository) Insert(ctx context.Context, expense *database.Expens
 
 	return id, err
 }
+
+func (r *ExpenseRepository) GetByID(ctx context.Context, expenseID uuid.UUID, userID uuid.UUID) (*database.Expense, error) {
+	row, err := r.db.Query(
+		ctx,
+		`SELECT 
+			id, 
+			user_id, 
+			description, 
+			payment_method_id,
+			ars_amount,
+			CASE 
+				WHEN usd_amount = 'NaN' THEN 0 
+				ELSE usd_amount
+			END as usd_amount,
+			category_id, 
+			subcategory_id,
+			recurrent_expense_id,
+			installements_expense_id,
+			date 
+		FROM public.expense 
+		WHERE id = $1 AND user_id = $2`,
+		expenseID,
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	expenses, err := pgx.CollectRows(row, pgx.RowToStructByName[database.Expense])
+	if err != nil {
+		return nil, err
+	}
+
+	if len(expenses) == 0 {
+		return nil, pgx.ErrNoRows
+	}
+
+	return &expenses[0], nil
+}
+
+func (r *ExpenseRepository) Update(ctx context.Context, expenseID uuid.UUID, userID uuid.UUID, description string, paymentMethodID string, arsAmount float64, usdAmount float64, categoryID string, subcategoryID *string, recurrentExpenseID *string, date time.Time) (*database.Expense, error) {
+	paymentMethodUUID := uuid.MustParse(paymentMethodID)
+	categoryUUID := uuid.MustParse(categoryID)
+
+	var subcategoryUUID *uuid.UUID
+	if subcategoryID != nil {
+		parsed := uuid.MustParse(*subcategoryID)
+		subcategoryUUID = &parsed
+	}
+
+	var recurrentExpenseUUID *uuid.UUID
+	if recurrentExpenseID != nil {
+		parsed := uuid.MustParse(*recurrentExpenseID)
+		recurrentExpenseUUID = &parsed
+	}
+
+	err := r.db.Exec(ctx, `
+		UPDATE public.expense 
+		SET 
+			description = $1,
+			payment_method_id = $2,
+			ars_amount = $3,
+			usd_amount = $4,
+			category_id = $5,
+			subcategory_id = $6,
+			recurrent_expense_id = $7,
+			date = $8
+		WHERE id = $9 AND user_id = $10
+	`,
+		description,
+		paymentMethodUUID,
+		arsAmount,
+		usdAmount,
+		categoryUUID,
+		subcategoryUUID,
+		recurrentExpenseUUID,
+		date,
+		expenseID,
+		userID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetByID(ctx, expenseID, userID)
+}
+
+func (r *ExpenseRepository) Delete(ctx context.Context, expenseID uuid.UUID, userID uuid.UUID) error {
+	_, err := r.GetByID(ctx, expenseID, userID)
+	if err != nil {
+		return err
+	}
+
+	err = r.db.Exec(ctx, `
+		DELETE FROM public.expense 
+		WHERE id = $1 AND user_id = $2
+	`,
+		expenseID,
+		userID,
+	)
+
+	return err
+}

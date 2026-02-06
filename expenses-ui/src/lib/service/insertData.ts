@@ -1,6 +1,7 @@
 import axios from "axios";
 import type {
   Category,
+  Expense,
   PaymentMethod,
   RecurrentExpense,
   Subcategory,
@@ -25,6 +26,8 @@ export interface NewExpensePayload {
   date: string;
 }
 
+export type EditExpensePayload = Omit<Expense, "createdDate">;
+
 export async function loadInsertData(): Promise<InsertData> {
   const { data } = await axios.get<InsertData>(
     `${
@@ -36,4 +39,15 @@ export async function loadInsertData(): Promise<InsertData> {
 
 export async function insertData(payload: NewExpensePayload) {
   await axios.post(`${import.meta.env.VITE_API_BASE_URL}/expense`, payload);
+}
+
+export async function editExpense(payload: EditExpensePayload) {
+  await axios.patch(
+    `${import.meta.env.VITE_API_BASE_URL}/expense/${payload.id}`,
+    payload,
+  );
+}
+
+export async function deleteExpense(id: string) {
+  await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/expense/${id}`);
 }

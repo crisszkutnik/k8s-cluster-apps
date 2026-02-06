@@ -164,3 +164,42 @@ func (s *ExpenseService) GetExpenses(ctx context.Context, userID uuid.UUID, star
 
 	return expenses, nil
 }
+
+func (s *ExpenseService) UpdateExpense(ctx context.Context, userID uuid.UUID, expenseID uuid.UUID, payload *ExpensePayload) (*database.Expense, error) {
+	// Verify the expense exists and belongs to the user
+	_, err := s.expenseRepo.GetByID(ctx, expenseID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("expense not found: %w", err)
+	}
+
+	buenosAiresLoc, _ := time.LoadLocation("America/Argentina/Buenos_Aires")
+	expenseDate, _ := time.ParseInLocation("2006-01-02", payload.Date, buenosAiresLoc)
+
+	expense, err := s.expenseRepo.Update(
+		ctx,
+		expenseID,
+		userID,
+		payload.Description,
+		payload.PaymentMethodID,
+		payload.ArsAmount,
+		payload.UsdAmount,
+		payload.CategoryID,
+		payload.SubcategoryID,
+		payload.RecurrentExpenseID,
+		expenseDate,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update expense: %w", err)
+	}
+
+	return expense, nil
+}
+
+func (s *ExpenseService) DeleteExpense(ctx context.Context, userID uuid.UUID, expenseID uuid.UUID) error {
+	err := s.expenseRepo.Delete(ctx, expenseID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete expense: %w", err)
+	}
+
+	return nil
+}
