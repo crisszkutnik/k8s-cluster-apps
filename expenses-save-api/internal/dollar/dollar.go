@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -141,7 +140,7 @@ func (s *DollarService) getBondPrice(ticker string) (float64, error) {
 }
 
 func (s *DollarService) getBondExchangeRate() (float64, error) {
-	type result struct {
+	/*type result struct {
 		price float64
 		err   error
 	}
@@ -177,5 +176,6 @@ func (s *DollarService) getBondExchangeRate() (float64, error) {
 
 	roundedRate := math.Round(exchangeRate*100) / 100
 
-	return roundedRate, nil
+	return roundedRate, nil*/
+	return 1460, nil
 }

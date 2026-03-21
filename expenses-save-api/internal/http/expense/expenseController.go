@@ -70,16 +70,27 @@ func (c *ExpenseController) GetExpenses(ctx fiber.Ctx) error {
 	log.Info("Payload received")
 
 	startDate := ctx.Query("startDate")
-	if startDate == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "startDate query parameter is required (format: YYYY-MM-DD)"})
-	}
-
 	endDate := ctx.Query("endDate")
-	if endDate == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "endDate query parameter is required (format: YYYY-MM-DD)"})
+
+	var categoryID *uuid.UUID
+	if categoryIDStr := ctx.Query("categoryId"); categoryIDStr != "" {
+		parsed, err := uuid.Parse(categoryIDStr)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid categoryId query parameter"})
+		}
+		categoryID = &parsed
 	}
 
-	expenses, err := c.expenseService.GetExpenses(ctx.Context(), userID, startDate, endDate)
+	var subcategoryID *uuid.UUID
+	if subcategoryIDStr := ctx.Query("subcategoryId"); subcategoryIDStr != "" {
+		parsed, err := uuid.Parse(subcategoryIDStr)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid subcategoryId query parameter"})
+		}
+		subcategoryID = &parsed
+	}
+
+	expenses, err := c.expenseService.GetExpenses(ctx.Context(), userID, startDate, endDate, categoryID, subcategoryID)
 	if err != nil {
 		log.Error(err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})

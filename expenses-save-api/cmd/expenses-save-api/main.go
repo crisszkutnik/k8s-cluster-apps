@@ -11,6 +11,7 @@ import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/category"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/expense"
+	paymentmethod "github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/paymentMethod"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/sheets"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/validator"
 )
@@ -51,12 +52,14 @@ func main() {
 	// Services
 	categoryService := category.NewCategoryService(categoryRepo)
 	expenseService := expense.NewExpenseService(categoryRepo, subcategoryRepo, paymentMethodRepo, recurrentExpenseRepo, expenseRepo, dollarService)
+	paymentMethodService := paymentmethod.NewPaymentMethodService(paymentMethodRepo)
 
 	// Controllers
 	categoryController := category.NewCategoryController(categoryService)
 	expenseController := expense.NewExpenseController(expenseService)
+	paymentMethodController := paymentmethod.NewPaymentMethodController(paymentMethodService)
 
-	httpServer := http.NewHttpServer(dbService, categoryController, expenseController)
+	httpServer := http.NewHttpServer(dbService, categoryController, expenseController, paymentMethodController)
 	httpServer.RegisterRouter()
 
 	go func() {

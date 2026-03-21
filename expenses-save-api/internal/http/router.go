@@ -8,22 +8,25 @@ import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/category"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/expense"
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/middleware"
+	paymentmethod "github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/paymentMethod"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 )
 
 type HttpServer struct {
-	app                *fiber.App
-	dbService          *database.DatabaseService
-	categoryController *category.CategoryController
-	expenseController  *expense.ExpenseController
+	app                    *fiber.App
+	dbService              *database.DatabaseService
+	categoryController     *category.CategoryController
+	expenseController      *expense.ExpenseController
+	paymentMethodController *paymentmethod.PaymentMethodController
 }
 
 func NewHttpServer(
 	databaseService *database.DatabaseService,
 	categoryController *category.CategoryController,
 	expenseController *expense.ExpenseController,
+	paymentMethodController *paymentmethod.PaymentMethodController,
 ) *HttpServer {
 	app := fiber.New()
 	app.Use(logger.New(logger.Config{
@@ -37,10 +40,11 @@ func NewHttpServer(
 	}))
 
 	return &HttpServer{
-		app:                app,
-		dbService:          databaseService,
-		categoryController: categoryController,
-		expenseController:  expenseController,
+		app:                     app,
+		dbService:               databaseService,
+		categoryController:      categoryController,
+		expenseController:       expenseController,
+		paymentMethodController: paymentMethodController,
 	}
 }
 
@@ -53,8 +57,10 @@ func (s *HttpServer) RegisterRouter() {
 	// Apply user ID middleware to all routes
 	s.app.Use(middleware.UserIDMiddleware())
 
-	// categoryGroup := s.app.Group("/category")
-	// categoryGroup.Get("/", s.categoryController.GetCategoriesByUserID)
+	categoryGroup := s.app.Group("/category")
+	categoryGroup.Get("/", s.categoryController.GetCategories)
+	categoryGroup.Post("/", s.categoryController.AddCategory)
+	categoryGroup.Patch("/:id", s.categoryController.UpdateCategory)
 
 	expenseGroup := s.app.Group("/expense")
 	expenseGroup.Get("/", s.expenseController.GetExpenses)
@@ -62,4 +68,9 @@ func (s *HttpServer) RegisterRouter() {
 	expenseGroup.Post("/", s.expenseController.AddExpense)
 	expenseGroup.Patch("/:id", s.expenseController.UpdateExpense)
 	expenseGroup.Delete("/:id", s.expenseController.DeleteExpense)
+
+	paymentMethodGroup := s.app.Group("/paymentMethod")
+	paymentMethodGroup.Get("/", s.paymentMethodController.GetPaymentMethods)
+	paymentMethodGroup.Post("/", s.paymentMethodController.AddPaymentMethod)
+	paymentMethodGroup.Patch("/:id", s.paymentMethodController.UpdatePaymentMethod)
 }

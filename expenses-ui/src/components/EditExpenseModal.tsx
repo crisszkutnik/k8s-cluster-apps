@@ -15,7 +15,7 @@ import { Combobox } from "./ui/combobox";
 import { useCategoryStore } from "../lib/stores/categoryStore";
 import { useSubcategoryStore } from "../lib/stores/subcategoryStore";
 import { usePaymentMethodStore } from "../lib/stores/paymentMethodStore";
-import { editExpense, loadInsertData, type EditExpensePayload } from "../lib/service/insertData";
+import { editExpense, type EditExpensePayload } from "../lib/service/insertData";
 import { toast } from "../lib/stores/toastStore";
 import type { Expense } from "../lib/types";
 
@@ -92,12 +92,12 @@ export function EditExpenseModal({ expense, onExpenseUpdated }: EditExpenseModal
         subcategoryId: expense.subcategoryId ?? "",
       });
       setErrors({});
-      
-      if (fxRate === 0) {
-        loadInsertData().then((data) => {
-          setFxRate(data.usdArsFx);
-        });
-      }
+
+      const implicitRate =
+        expense.arsAmount && expense.usdAmount
+          ? Math.round((expense.arsAmount / expense.usdAmount) * 100) / 100
+          : 0;
+      setFxRate(implicitRate);
     }
   }, [open, expense]);
 

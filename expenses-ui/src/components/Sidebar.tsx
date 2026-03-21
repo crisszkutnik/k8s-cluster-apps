@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { ROUTES } from "../routes/routes";
-import { Home } from "lucide-react";
+import { Home, CreditCard, Tag } from "lucide-react";
 import { NewExpenseModal } from "./NewExpenseModal";
 
 interface NavItem {
@@ -15,6 +15,8 @@ interface SidebarProps {
 
 const navItems: NavItem[] = [
   { label: "Home", to: ROUTES.HOME, icon: <Home size={18} /> },
+  { label: "Payment Methods", to: ROUTES.PAYMENT_METHODS, icon: <CreditCard size={18} /> },
+  { label: "Categories", to: ROUTES.CATEGORIES, icon: <Tag size={18} /> },
 ];
 
 export function Sidebar({ onNavigate }: SidebarProps) {
@@ -28,7 +30,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       <nav className="flex-1 px-3 py-4">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.to;
+            const isActive =
+              item.to === ROUTES.HOME
+                ? location.pathname === item.to
+                : location.pathname.startsWith(item.to);
             return (
               <li key={item.to}>
                 <Link

@@ -1,4 +1,4 @@
-package category
+package paymentmethod
 
 import (
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/http/middleware"
@@ -7,38 +7,38 @@ import (
 	"github.com/google/uuid"
 )
 
-type CategoryController struct {
-	categoryService *CategoryService
+type PaymentMethodController struct {
+	paymentMethodService *PaymentMethodService
 }
 
-func NewCategoryController(categoryService *CategoryService) *CategoryController {
-	return &CategoryController{
-		categoryService: categoryService,
+func NewPaymentMethodController(paymentMethodService *PaymentMethodService) *PaymentMethodController {
+	return &PaymentMethodController{
+		paymentMethodService: paymentMethodService,
 	}
 }
 
-func (c *CategoryController) GetCategories(ctx fiber.Ctx) error {
+func (c *PaymentMethodController) GetPaymentMethods(ctx fiber.Ctx) error {
 	userID, err := middleware.GetUserIDFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user ID not found in context"})
 	}
 
-	categories, err := c.categoryService.GetCategoriesByUserID(ctx.Context(), userID)
+	paymentMethods, err := c.paymentMethodService.GetByUserID(ctx.Context(), userID)
 	if err != nil {
 		log.Error(err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(categories)
+	return ctx.Status(fiber.StatusOK).JSON(paymentMethods)
 }
 
-func (c *CategoryController) AddCategory(ctx fiber.Ctx) error {
+func (c *PaymentMethodController) AddPaymentMethod(ctx fiber.Ctx) error {
 	userID, err := middleware.GetUserIDFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user ID not found in context"})
 	}
 
-	var payload CategoryPayload
+	var payload PaymentMethodPayload
 	if err := ctx.Bind().Body(&payload); err != nil {
 		log.Error(err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
@@ -48,18 +48,18 @@ func (c *CategoryController) AddCategory(ctx fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "name is required"})
 	}
 
-	category, err := c.categoryService.Insert(ctx.Context(), userID, &payload)
+	pm, err := c.paymentMethodService.Insert(ctx.Context(), userID, &payload)
 	if err != nil {
 		log.Error(err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	log.Info("Added category")
+	log.Info("Added payment method")
 
-	return ctx.Status(fiber.StatusCreated).JSON(category)
+	return ctx.Status(fiber.StatusCreated).JSON(pm)
 }
 
-func (c *CategoryController) UpdateCategory(ctx fiber.Ctx) error {
+func (c *PaymentMethodController) UpdatePaymentMethod(ctx fiber.Ctx) error {
 	userID, err := middleware.GetUserIDFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user ID not found in context"})
@@ -68,10 +68,10 @@ func (c *CategoryController) UpdateCategory(ctx fiber.Ctx) error {
 	idStr := ctx.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid category ID"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payment method ID"})
 	}
 
-	var payload CategoryPayload
+	var payload PaymentMethodPayload
 	if err := ctx.Bind().Body(&payload); err != nil {
 		log.Error(err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
@@ -81,16 +81,16 @@ func (c *CategoryController) UpdateCategory(ctx fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "name is required"})
 	}
 
-	category, err := c.categoryService.Update(ctx.Context(), id, userID, &payload)
+	pm, err := c.paymentMethodService.Update(ctx.Context(), id, userID, &payload)
 	if err != nil {
 		log.Error(err)
-		if err.Error() == "category not found" {
+		if err.Error() == "payment method not found" {
 			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 		}
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	log.Info("Updated category")
+	log.Info("Updated payment method")
 
-	return ctx.Status(fiber.StatusOK).JSON(category)
+	return ctx.Status(fiber.StatusOK).JSON(pm)
 }

@@ -9,38 +9,82 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PaymentMethodsRouteImport } from './routes/paymentMethods'
+import { Route as CategoryRouteImport } from './routes/category'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CategoryIdRouteImport } from './routes/category_.$id'
 
+const PaymentMethodsRoute = PaymentMethodsRouteImport.update({
+  id: '/paymentMethods',
+  path: '/paymentMethods',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoryRoute = CategoryRouteImport.update({
+  id: '/category',
+  path: '/category',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CategoryIdRoute = CategoryIdRouteImport.update({
+  id: '/category_/$id',
+  path: '/category/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/category': typeof CategoryRoute
+  '/paymentMethods': typeof PaymentMethodsRoute
+  '/category/$id': typeof CategoryIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/category': typeof CategoryRoute
+  '/paymentMethods': typeof PaymentMethodsRoute
+  '/category/$id': typeof CategoryIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/category': typeof CategoryRoute
+  '/paymentMethods': typeof PaymentMethodsRoute
+  '/category_/$id': typeof CategoryIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/category' | '/paymentMethods' | '/category/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/category' | '/paymentMethods' | '/category/$id'
+  id: '__root__' | '/' | '/category' | '/paymentMethods' | '/category_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CategoryRoute: typeof CategoryRoute
+  PaymentMethodsRoute: typeof PaymentMethodsRoute
+  CategoryIdRoute: typeof CategoryIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/paymentMethods': {
+      id: '/paymentMethods'
+      path: '/paymentMethods'
+      fullPath: '/paymentMethods'
+      preLoaderRoute: typeof PaymentMethodsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/category': {
+      id: '/category'
+      path: '/category'
+      fullPath: '/category'
+      preLoaderRoute: typeof CategoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +92,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/category_/$id': {
+      id: '/category_/$id'
+      path: '/category/$id'
+      fullPath: '/category/$id'
+      preLoaderRoute: typeof CategoryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CategoryRoute: CategoryRoute,
+  PaymentMethodsRoute: PaymentMethodsRoute,
+  CategoryIdRoute: CategoryIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

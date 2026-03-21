@@ -81,6 +81,12 @@ type RecurrentExpense struct {
 	CreatedDate     time.Time  `db:"created_date" json:"createdDate"`
 }
 
+type InstallementsExpense struct {
+	ID          uuid.UUID
+	UserID      uuid.UUID
+	Description string
+}
+
 type GoogleSheetsInfo struct {
 	SheetID   string `json:"sheetId"`
 	SheetName string `json:"sheetName"`

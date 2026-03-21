@@ -4,6 +4,7 @@ import type { Expense } from "../types";
 interface ExpenseCache {
   monthly: { [key: string]: Expense[] }; // key format: "YYYY-MM"
   yearly: { [key: string]: Expense[] }; // key format: "YYYY"
+  byCategory: { [categoryId: string]: Expense[] };
 }
 
 interface ExpenseStoreState {
@@ -24,6 +25,9 @@ interface ExpenseStoreState {
   setCurrentPeriod: (period: string, view: "monthly" | "yearly") => void;
   setView: (view: "monthly" | "yearly") => void;
   invalidateCache: (period: string, view: "monthly" | "yearly") => void;
+  setCategoryExpenses: (categoryId: string, newExpenses: Expense[]) => void;
+  getCategoryExpenses: (categoryId: string) => Expense[];
+  invalidateCategoryCache: (categoryId: string) => void;
 }
 
 export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
@@ -31,6 +35,7 @@ export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
   cache: {
     monthly: {},
     yearly: {},
+    byCategory: {},
   },
   currentMonth: "",
   currentYear: "",
@@ -125,5 +130,34 @@ export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
         };
       });
     }
+  },
+
+  setCategoryExpenses: (categoryId: string, newExpenses: Expense[]) => {
+    set((state) => ({
+      cache: {
+        ...state.cache,
+        byCategory: {
+          ...state.cache.byCategory,
+          [categoryId]: newExpenses,
+        },
+      },
+    }));
+  },
+
+  getCategoryExpenses: (categoryId: string) => {
+    return get().cache.byCategory[categoryId] ?? [];
+  },
+
+  invalidateCategoryCache: (categoryId: string) => {
+    set((state) => {
+      const newByCategory = { ...state.cache.byCategory };
+      delete newByCategory[categoryId];
+      return {
+        cache: {
+          ...state.cache,
+          byCategory: newByCategory,
+        },
+      };
+    });
   },
 }));

@@ -17,7 +17,11 @@ import { useCategoryStore } from "../lib/stores/categoryStore";
 import { useSubcategoryStore } from "../lib/stores/subcategoryStore";
 import { usePaymentMethodStore } from "../lib/stores/paymentMethodStore";
 import { useRecurrentExpenseStore } from "../lib/stores/recurrentExpenseStore";
-import { insertData, loadInsertData, type NewExpensePayload } from "../lib/service/insertData";
+import {
+  insertData,
+  loadInsertData,
+  type NewExpensePayload,
+} from "../lib/service/insertData";
 import { toast } from "../lib/stores/toastStore";
 
 interface ExpenseFormData {
@@ -38,19 +42,33 @@ interface FormErrors {
   categoryId?: string;
 }
 
-const initialFormData: ExpenseFormData = {
+const buildInitialFormData = (defaultCategoryId?: string, defaultSubcategoryId?: string): ExpenseFormData => ({
   description: "",
   arsAmount: "",
   usdAmount: "",
   date: new Date().toISOString().split("T")[0],
   paymentMethodId: "",
-  categoryId: "",
-  subcategoryId: "",
-};
+  categoryId: defaultCategoryId ?? "",
+  subcategoryId: defaultSubcategoryId ?? "",
+});
 
-export function NewExpenseModal() {
+interface NewExpenseModalProps {
+  defaultCategoryId?: string;
+  defaultSubcategoryId?: string;
+  onSuccess?: () => void;
+  compact?: boolean;
+}
+
+export function NewExpenseModal({
+  defaultCategoryId,
+  defaultSubcategoryId,
+  onSuccess,
+  compact,
+}: NewExpenseModalProps = {}) {
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState<ExpenseFormData>(initialFormData);
+  const [formData, setFormData] = useState<ExpenseFormData>(() =>
+    buildInitialFormData(defaultCategoryId, defaultSubcategoryId),
+  );
   const [selectedRecurrentId, setSelectedRecurrentId] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,7 +96,7 @@ export function NewExpenseModal() {
   }));
 
   const filteredSubcategories = subcategories.filter(
-    (sub) => sub.categoryId === formData.categoryId
+    (sub) => sub.categoryId === formData.categoryId,
   );
 
   const subcategoryOptions = filteredSubcategories.map((sub) => ({
@@ -86,14 +104,13 @@ export function NewExpenseModal() {
     label: sub.name,
   }));
 
-  // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
-      setFormData(initialFormData);
+      setFormData(buildInitialFormData(defaultCategoryId, defaultSubcategoryId));
       setSelectedRecurrentId("");
       setErrors({});
     }
-  }, [open]);
+  }, [open, defaultCategoryId, defaultSubcategoryId]);
 
   useEffect(() => {
     if (open && fxRate === 0) {
@@ -107,7 +124,7 @@ export function NewExpenseModal() {
   useEffect(() => {
     if (formData.categoryId) {
       const hasSubcategories = subcategories.some(
-        (sub) => sub.categoryId === formData.categoryId
+        (sub) => sub.categoryId === formData.categoryId,
       );
       if (!hasSubcategories) {
         setFormData((prev) => ({ ...prev, subcategoryId: "" }));
@@ -127,7 +144,7 @@ export function NewExpenseModal() {
     setErrors({});
 
     if (!recurrentId) {
-      setFormData(initialFormData);
+      setFormData(buildInitialFormData(defaultCategoryId));
       return;
     }
 
@@ -152,8 +169,8 @@ export function NewExpenseModal() {
       newErrors.description = "Description is required";
     }
 
-    if (!formData.arsAmount && !formData.usdAmount) {
-      newErrors.amount = "At least one amount (ARS or USD) is required";
+    if (!formData.arsAmount || !formData.usdAmount) {
+      newErrors.amount = "Both ARS and USD amounts are required";
     }
 
     if (!formData.date) {
@@ -194,11 +211,18 @@ export function NewExpenseModal() {
     setIsSubmitting(true);
     try {
       await insertData(payload);
-      toast.success("Expense added", `"${payload.description}" was added successfully.`);
+      toast.success(
+        "Expense added",
+        `"${payload.description}" was added successfully.`,
+      );
+      onSuccess?.();
       setOpen(false);
     } catch (error) {
       console.error("Failed to insert expense:", error);
-      toast.error("Failed to add expense", "Something went wrong. Please try again.");
+      toast.error(
+        "Failed to add expense",
+        "Something went wrong. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -206,7 +230,7 @@ export function NewExpenseModal() {
 
   const updateField = <K extends keyof ExpenseFormData>(
     field: K,
-    value: ExpenseFormData[K]
+    value: ExpenseFormData[K],
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear related errors
@@ -234,7 +258,7 @@ export function NewExpenseModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full gap-2">
+        <Button className={compact ? "gap-2" : "w-full gap-2"}>
           <Plus size={18} />
           New expense
         </Button>
@@ -297,7 +321,9 @@ export function NewExpenseModal() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="arsAmount" className="flex-1">ARS Amount</Label>
+                  <Label htmlFor="arsAmount" className="flex-1">
+                    ARS Amount
+                  </Label>
                   <Button
                     type="button"
                     variant="ghost"
@@ -333,7 +359,9 @@ export function NewExpenseModal() {
                   >
                     <ArrowRightLeft size={14} />
                   </Button>
-                  <Label htmlFor="usdAmount" className="flex-1">USD Amount</Label>
+                  <Label htmlFor="usdAmount" className="flex-1">
+                    USD Amount
+                  </Label>
                 </div>
                 <Input
                   id="usdAmount"

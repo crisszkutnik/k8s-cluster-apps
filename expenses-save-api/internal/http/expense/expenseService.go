@@ -140,24 +140,32 @@ func (s *ExpenseService) AddExpense(ctx context.Context, userID uuid.UUID, paylo
 	return expense, nil
 }
 
-func (s *ExpenseService) GetExpenses(ctx context.Context, userID uuid.UUID, startDateStr string, endDateStr string) ([]database.Expense, error) {
+func (s *ExpenseService) GetExpenses(ctx context.Context, userID uuid.UUID, startDateStr string, endDateStr string, categoryID *uuid.UUID, subcategoryID *uuid.UUID) ([]database.Expense, error) {
 	buenosAiresLoc, _ := time.LoadLocation("America/Argentina/Buenos_Aires")
 
-	startDate, err := time.ParseInLocation("2006-01-02", startDateStr, buenosAiresLoc)
-	if err != nil {
-		return nil, fmt.Errorf("invalid startDate format, expected YYYY-MM-DD: %w", err)
+	var startDate *time.Time
+	if startDateStr != "" {
+		t, err := time.ParseInLocation("2006-01-02", startDateStr, buenosAiresLoc)
+		if err != nil {
+			return nil, fmt.Errorf("invalid startDate format, expected YYYY-MM-DD: %w", err)
+		}
+		startDate = &t
 	}
 
-	endDate, err := time.ParseInLocation("2006-01-02", endDateStr, buenosAiresLoc)
-	if err != nil {
-		return nil, fmt.Errorf("invalid endDate format, expected YYYY-MM-DD: %w", err)
+	var endDate *time.Time
+	if endDateStr != "" {
+		t, err := time.ParseInLocation("2006-01-02", endDateStr, buenosAiresLoc)
+		if err != nil {
+			return nil, fmt.Errorf("invalid endDate format, expected YYYY-MM-DD: %w", err)
+		}
+		endDate = &t
 	}
 
-	if startDate.After(endDate) {
+	if startDate != nil && endDate != nil && startDate.After(*endDate) {
 		return nil, fmt.Errorf("startDate cannot be after endDate")
 	}
 
-	expenses, err := s.expenseRepo.GetByUserIDAndDateRange(ctx, userID, startDate, endDate)
+	expenses, err := s.expenseRepo.GetByUserIDAndDateRange(ctx, userID, startDate, endDate, categoryID, subcategoryID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch expenses: %w", err)
 	}
@@ -203,3 +211,4 @@ func (s *ExpenseService) DeleteExpense(ctx context.Context, userID uuid.UUID, ex
 
 	return nil
 }
+

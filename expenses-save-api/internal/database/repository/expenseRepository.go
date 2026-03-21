@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/crisszkutnik/k8s-cluster-apps/expenses-save-api/internal/database"
@@ -17,17 +18,8 @@ func NewExpenseRepository(db *database.DatabaseService) *ExpenseRepository {
 	return &ExpenseRepository{db: db}
 }
 
-func (r *ExpenseRepository) GetByUserIDAndDateRange(ctx context.Context, userID uuid.UUID, startDate time.Time, endDate time.Time) ([]database.Expense, error) {
-	startOfDay := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, startDate.Location())
-
-	endOfDay := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 999999999, endDate.Location())
-
-	/*
-		TODO: Make something with the USD amount being NaN
-	*/
-	rows, err := r.db.Query(
-		ctx,
-		`SELECT 
+func (r *ExpenseRepository) GetByUserIDAndDateRange(ctx context.Context, userID uuid.UUID, startDate *time.Time, endDate *time.Time, categoryID *uuid.UUID, subcategoryID *uuid.UUID) ([]database.Expense, error) {
+	query := `SELECT 
 			id, 
 			user_id, 
 			description, 
@@ -43,14 +35,35 @@ func (r *ExpenseRepository) GetByUserIDAndDateRange(ctx context.Context, userID 
 			installements_expense_id,
 			date 
 		FROM public.expense 
-		WHERE user_id = $1 
-			AND date >= $2 
-			AND date <= $3 
-		ORDER BY date DESC`,
-		userID,
-		startOfDay,
-		endOfDay,
-	)
+		WHERE user_id = $1`
+
+	args := []any{userID}
+
+	if startDate != nil {
+		startOfDay := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, startDate.Location())
+		args = append(args, startOfDay)
+		query += fmt.Sprintf(" AND date >= $%d", len(args))
+	}
+
+	if endDate != nil {
+		endOfDay := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 999999999, endDate.Location())
+		args = append(args, endOfDay)
+		query += fmt.Sprintf(" AND date <= $%d", len(args))
+	}
+
+	if categoryID != nil {
+		args = append(args, *categoryID)
+		query += fmt.Sprintf(" AND category_id = $%d", len(args))
+	}
+
+	if subcategoryID != nil {
+		args = append(args, *subcategoryID)
+		query += fmt.Sprintf(" AND subcategory_id = $%d", len(args))
+	}
+
+	query += " ORDER BY date DESC"
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -218,6 +231,7 @@ func (r *ExpenseRepository) Update(ctx context.Context, expenseID uuid.UUID, use
 
 	return r.GetByID(ctx, expenseID, userID)
 }
+
 
 func (r *ExpenseRepository) Delete(ctx context.Context, expenseID uuid.UUID, userID uuid.UUID) error {
 	_, err := r.GetByID(ctx, expenseID, userID)
