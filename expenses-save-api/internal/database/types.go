@@ -82,9 +82,10 @@ type RecurrentExpense struct {
 }
 
 type InstallementsExpense struct {
-	ID          uuid.UUID
-	UserID      uuid.UUID
-	Description string
+	ID          uuid.UUID `db:"id" json:"id"`
+	UserID      uuid.UUID `db:"user_id" json:"userId"`
+	Description string    `db:"description" json:"description"`
+	CreatedDate time.Time `db:"created_date" json:"createdDate"`
 }
 
 type GoogleSheetsInfo struct {
