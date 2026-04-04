@@ -48,10 +48,11 @@ func main() {
 	paymentMethodRepo := repository.NewPaymentMethodRepository(dbService)
 	recurrentExpenseRepo := repository.NewRecurrentExpenseRepository(dbService)
 	expenseRepo := repository.NewExpenseRepository(dbService)
+	installmentExpenseRepo := repository.NewInstallmentExpenseRepository(dbService)
 
 	// Services
 	categoryService := category.NewCategoryService(categoryRepo)
-	expenseService := expense.NewExpenseService(categoryRepo, subcategoryRepo, paymentMethodRepo, recurrentExpenseRepo, expenseRepo, dollarService)
+	expenseService := expense.NewExpenseService(categoryRepo, subcategoryRepo, paymentMethodRepo, recurrentExpenseRepo, expenseRepo, installmentExpenseRepo, dollarService, dbService)
 	paymentMethodService := paymentmethod.NewPaymentMethodService(paymentMethodRepo)
 
 	// Controllers

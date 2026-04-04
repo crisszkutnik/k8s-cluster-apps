@@ -13,6 +13,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Combobox } from "./ui/combobox";
+import { cn } from "../lib/utils";
 import { useCategoryStore } from "../lib/stores/categoryStore";
 import { useSubcategoryStore } from "../lib/stores/subcategoryStore";
 import { usePaymentMethodStore } from "../lib/stores/paymentMethodStore";
@@ -24,6 +25,9 @@ import {
 } from "../lib/service/insertData";
 import { toast } from "../lib/stores/toastStore";
 
+type ExpenseType = "individual" | "recurrent" | "installment";
+type InstallmentAmountType = "total" | "perInstallment";
+
 interface ExpenseFormData {
   description: string;
   arsAmount: string;
@@ -32,6 +36,7 @@ interface ExpenseFormData {
   paymentMethodId: string;
   categoryId: string;
   subcategoryId: string;
+  installmentMonths: string;
 }
 
 interface FormErrors {
@@ -40,6 +45,7 @@ interface FormErrors {
   date?: string;
   paymentMethodId?: string;
   categoryId?: string;
+  installmentMonths?: string;
 }
 
 const buildInitialFormData = (defaultCategoryId?: string, defaultSubcategoryId?: string): ExpenseFormData => ({
@@ -50,6 +56,7 @@ const buildInitialFormData = (defaultCategoryId?: string, defaultSubcategoryId?:
   paymentMethodId: "",
   categoryId: defaultCategoryId ?? "",
   subcategoryId: defaultSubcategoryId ?? "",
+  installmentMonths: "",
 });
 
 interface NewExpenseModalProps {
@@ -75,6 +82,8 @@ export function NewExpenseModal({
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = isControlled ? (controlledOnOpenChange ?? (() => {})) : setInternalOpen;
+  const [expenseType, setExpenseType] = useState<ExpenseType>("individual");
+  const [installmentAmountType, setInstallmentAmountType] = useState<InstallmentAmountType>("total");
   const [formData, setFormData] = useState<ExpenseFormData>(() =>
     buildInitialFormData(defaultCategoryId, defaultSubcategoryId),
   );
@@ -117,8 +126,11 @@ export function NewExpenseModal({
     if (!open) {
       setFormData(buildInitialFormData(defaultCategoryId, defaultSubcategoryId));
       setSelectedRecurrentId("");
+      setExpenseType("individual");
+      setInstallmentAmountType("total");
       setErrors({});
     } else if (defaultRecurrentExpenseId) {
+      setExpenseType("recurrent");
       setSelectedRecurrentId(defaultRecurrentExpenseId);
       setErrors({});
 
@@ -132,6 +144,7 @@ export function NewExpenseModal({
           paymentMethodId: recurrent.paymentMethodId,
           categoryId: recurrent.categoryId,
           subcategoryId: recurrent.subcategoryId ?? "",
+          installmentMonths: "",
         });
       }
     }
@@ -187,6 +200,15 @@ export function NewExpenseModal({
     }
   };
 
+  const handleExpenseTypeChange = (type: ExpenseType) => {
+    setExpenseType(type);
+    // Clear recurrent selection when switching away from recurrent type
+    if (type !== "recurrent") {
+      setSelectedRecurrentId("");
+    }
+    setErrors({});
+  };
+
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
 
@@ -210,6 +232,12 @@ export function NewExpenseModal({
       newErrors.categoryId = "Category is required";
     }
 
+    if (expenseType === "installment") {
+      if (!formData.installmentMonths || parseInt(formData.installmentMonths) < 1) {
+        newErrors.installmentMonths = "Number of installments must be at least 1";
+      }
+    }
+
     return newErrors;
   };
 
@@ -222,15 +250,30 @@ export function NewExpenseModal({
       return;
     }
 
+    const installmentMonths = expenseType === "installment" && formData.installmentMonths
+      ? parseInt(formData.installmentMonths)
+      : undefined;
+
+    const arsAmount = parseFloat(formData.arsAmount) || 0;
+    const usdAmount = parseFloat(formData.usdAmount) || 0;
+
+    const finalArsAmount = expenseType === "installment" && installmentAmountType === "perInstallment" && installmentMonths
+      ? arsAmount * installmentMonths
+      : arsAmount;
+    const finalUsdAmount = expenseType === "installment" && installmentAmountType === "perInstallment" && installmentMonths
+      ? usdAmount * installmentMonths
+      : usdAmount;
+
     const payload: NewExpensePayload = {
       description: formData.description.trim(),
       paymentMethodId: formData.paymentMethodId,
-      arsAmount: formData.arsAmount ? parseFloat(formData.arsAmount) : 0,
-      usdAmount: formData.usdAmount ? parseFloat(formData.usdAmount) : 0,
+      arsAmount: finalArsAmount,
+      usdAmount: finalUsdAmount,
       categoryId: formData.categoryId,
       subcategoryId: formData.subcategoryId || undefined,
       recurrentExpenseId: selectedRecurrentId || undefined,
       date: formData.date,
+      ...(installmentMonths && { installmentMonths }),
     };
 
     setIsSubmitting(true);
@@ -258,12 +301,12 @@ export function NewExpenseModal({
     value: ExpenseFormData[K],
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear related errors
     if (field === "description") clearError("description");
     if (field === "arsAmount" || field === "usdAmount") clearError("amount");
     if (field === "date") clearError("date");
     if (field === "paymentMethodId") clearError("paymentMethodId");
     if (field === "categoryId") clearError("categoryId");
+    if (field === "installmentMonths") clearError("installmentMonths");
   };
 
   const convertArsToUsd = () => {
@@ -292,12 +335,74 @@ export function NewExpenseModal({
         <DialogHeader>
           <DialogTitle>New Expense</DialogTitle>
           <DialogDescription>
-            Add a new expense or select from a recurrent expense.
+            Add an individual expense, create from a recurrent expense, or set up an installment expense.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Recurrent Expense Selection */}
-          {recurrentExpenses.length > 0 && (
+          {/* Expense Type Selection */}
+          <div className="space-y-3">
+            <Label>Expense Type</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => handleExpenseTypeChange("individual")}
+                className={cn(
+                  "flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  expenseType === "individual"
+                    ? "bg-muted text-foreground border border-muted-foreground/40"
+                    : "bg-muted/40 text-muted-foreground hover:bg-muted/60 border border-transparent"
+                )}
+              >
+                Individual Expense
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExpenseTypeChange("recurrent")}
+                className={cn(
+                  "flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  expenseType === "recurrent"
+                    ? "bg-muted text-foreground border border-muted-foreground/40"
+                    : "bg-muted/40 text-muted-foreground hover:bg-muted/60 border border-transparent"
+                )}
+              >
+                Recurrent Expense
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExpenseTypeChange("installment")}
+                className={cn(
+                  "flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  expenseType === "installment"
+                    ? "bg-muted text-foreground border border-muted-foreground/40"
+                    : "bg-muted/40 text-muted-foreground hover:bg-muted/60 border border-transparent"
+                )}
+              >
+                Installment Expense
+              </button>
+            </div>
+          </div>
+
+          {expenseType === "installment" && (
+            <div className="space-y-2">
+              <Label htmlFor="installmentMonths">
+                Number of Installments <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="installmentMonths"
+                type="number"
+                min="1"
+                value={formData.installmentMonths}
+                onChange={(e) => updateField("installmentMonths", e.target.value)}
+                placeholder="Enter number of months"
+                className={errors.installmentMonths ? "border-destructive" : ""}
+              />
+              {errors.installmentMonths && (
+                <p className="text-sm text-destructive">{errors.installmentMonths}</p>
+              )}
+            </div>
+          )}
+
+          {expenseType === "recurrent" && recurrentExpenses.length > 0 && (
             <div className="space-y-2">
               <Label>Recurrent Expense (optional)</Label>
               <Combobox
@@ -328,10 +433,49 @@ export function NewExpenseModal({
             )}
           </div>
 
+          {expenseType === "installment" && (
+            <div className="space-y-2">
+              <Label>Amount Type</Label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInstallmentAmountType("total")}
+                  className={cn(
+                    "flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                    installmentAmountType === "total"
+                      ? "bg-muted text-foreground border border-muted-foreground/40"
+                      : "bg-muted/40 text-muted-foreground hover:bg-muted/60 border border-transparent"
+                  )}
+                >
+                  Total Amount
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInstallmentAmountType("perInstallment")}
+                  className={cn(
+                    "flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                    installmentAmountType === "perInstallment"
+                      ? "bg-muted text-foreground border border-muted-foreground/40"
+                      : "bg-muted/40 text-muted-foreground hover:bg-muted/60 border border-transparent"
+                  )}
+                >
+                  Per Installment
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Amounts */}
           <div className="space-y-2">
             <div className="flex items-center justify-between mb-2">
-              <Label>Amounts</Label>
+              <Label>
+                Amounts
+                {expenseType === "installment" && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({installmentAmountType === "total" ? "Total" : "Per Installment"})
+                  </span>
+                )}
+              </Label>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>FX Rate:</span>
                 <Input

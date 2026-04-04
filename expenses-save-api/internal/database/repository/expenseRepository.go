@@ -240,7 +240,7 @@ func (r *ExpenseRepository) Delete(ctx context.Context, expenseID uuid.UUID, use
 	}
 
 	err = r.db.Exec(ctx, `
-		DELETE FROM public.expense 
+		DELETE FROM public.expense
 		WHERE id = $1 AND user_id = $2
 	`,
 		expenseID,
@@ -248,4 +248,38 @@ func (r *ExpenseRepository) Delete(ctx context.Context, expenseID uuid.UUID, use
 	)
 
 	return err
+}
+
+func (r *ExpenseRepository) InsertWithTx(ctx context.Context, tx pgx.Tx, expense *database.Expense, recurrentExpenseID *uuid.UUID, installmentExpenseID *uuid.UUID) (uuid.UUID, error) {
+	var id uuid.UUID
+
+	err := tx.QueryRow(ctx, `
+		INSERT INTO public.expense (
+			user_id,
+			description,
+			payment_method_id,
+			ars_amount,
+			usd_amount,
+			category_id,
+			subcategory_id,
+			recurrent_expense_id,
+			installements_expense_id,
+			date
+		) VALUES
+		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		RETURNING id
+	`,
+		expense.UserID,
+		expense.Description,
+		expense.PaymentMethodID,
+		expense.ARSAmount,
+		expense.USDAmount,
+		expense.CategoryID,
+		expense.SubcategoryID,
+		recurrentExpenseID,
+		installmentExpenseID,
+		expense.Date,
+	).Scan(&id)
+
+	return id, err
 }

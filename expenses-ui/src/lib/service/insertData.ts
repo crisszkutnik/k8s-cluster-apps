@@ -24,6 +24,7 @@ export interface NewExpensePayload {
   subcategoryId?: string;
   recurrentExpenseId?: string;
   date: string;
+  installmentMonths?: number;
 }
 
 export type EditExpensePayload = Omit<Expense, "createdDate">;

@@ -56,6 +56,10 @@ func (s *DatabaseService) Exec(ctx context.Context, sql string, args ...interfac
 	return err
 }
 
+func (s *DatabaseService) BeginTx(ctx context.Context) (pgx.Tx, error) {
+	return s.pool.Begin(ctx)
+}
+
 // ============================================================================
 // Legacy Methods (kept for backward compatibility)
 // ============================================================================

@@ -12,12 +12,14 @@ import (
 )
 
 type ExpenseService struct {
-	categoryRepo         *repository.CategoryRepository
-	subcategoryRepo      *repository.SubcategoryRepository
-	paymentMethodRepo    *repository.PaymentMethodRepository
-	recurrentExpenseRepo *repository.RecurrentExpenseRepository
-	expenseRepo          *repository.ExpenseRepository
-	dollarService        *dollar.DollarService
+	categoryRepo            *repository.CategoryRepository
+	subcategoryRepo         *repository.SubcategoryRepository
+	paymentMethodRepo       *repository.PaymentMethodRepository
+	recurrentExpenseRepo    *repository.RecurrentExpenseRepository
+	expenseRepo             *repository.ExpenseRepository
+	installmentExpenseRepo  *repository.InstallmentExpenseRepository
+	dollarService           *dollar.DollarService
+	db                      *database.DatabaseService
 }
 
 type ExpenseInsertInformationResponse struct {
@@ -34,9 +36,10 @@ type ExpensePayload struct {
 	ArsAmount          float64 `json:"arsAmount" validate:"required,min=0"`
 	UsdAmount          float64 `json:"usdAmount" validate:"required,min=0"`
 	CategoryID         string  `json:"categoryId" validate:"required,uuid"`
-	SubcategoryID      *string `json:"subcategoryId" validate:"omitempty,uuid"`
-	RecurrentExpenseID *string `json:"recurrentExpenseId" validate:"omitempty,uuid"`
+	SubcategoryID      *string `json:"subcategoryId,omitempty" validate:"omitempty,uuid"`
+	RecurrentExpenseID *string `json:"recurrentExpenseId,omitempty" validate:"omitempty,uuid"`
 	Date               string  `json:"date" validate:"required,datetime=2006-01-02"`
+	InstallmentMonths  int     `json:"installmentMonths,omitempty" validate:"omitempty,min=1"`
 }
 
 // ExpenseWithStringIDs is an internal representation used between controller and service
@@ -57,15 +60,19 @@ func NewExpenseService(
 	paymentMethodRepo *repository.PaymentMethodRepository,
 	recurrentExpenseRepo *repository.RecurrentExpenseRepository,
 	expenseRepo *repository.ExpenseRepository,
+	installmentExpenseRepo *repository.InstallmentExpenseRepository,
 	dollarService *dollar.DollarService,
+	db *database.DatabaseService,
 ) *ExpenseService {
 	return &ExpenseService{
-		categoryRepo:         categoryRepo,
-		subcategoryRepo:      subcategoryRepo,
-		paymentMethodRepo:    paymentMethodRepo,
-		recurrentExpenseRepo: recurrentExpenseRepo,
-		expenseRepo:          expenseRepo,
-		dollarService:        dollarService,
+		categoryRepo:           categoryRepo,
+		subcategoryRepo:        subcategoryRepo,
+		paymentMethodRepo:      paymentMethodRepo,
+		recurrentExpenseRepo:   recurrentExpenseRepo,
+		expenseRepo:            expenseRepo,
+		installmentExpenseRepo: installmentExpenseRepo,
+		dollarService:          dollarService,
+		db:                     db,
 	}
 }
 
@@ -210,5 +217,81 @@ func (s *ExpenseService) DeleteExpense(ctx context.Context, userID uuid.UUID, ex
 	}
 
 	return nil
+}
+
+func (s *ExpenseService) AddInstallmentExpense(ctx context.Context, userID uuid.UUID, payload *ExpensePayload) ([]uuid.UUID, error) {
+	if payload.InstallmentMonths < 1 {
+		return nil, fmt.Errorf("installmentMonths must be at least 1")
+	}
+
+	buenosAiresLoc, _ := time.LoadLocation("America/Argentina/Buenos_Aires")
+	startDate, _ := time.ParseInLocation("2006-01-02", payload.Date, buenosAiresLoc)
+
+	paymentMethodUUID := uuid.MustParse(payload.PaymentMethodID)
+	categoryUUID := uuid.MustParse(payload.CategoryID)
+
+	var subcategoryUUID *uuid.UUID
+	if payload.SubcategoryID != nil {
+		parsed := uuid.MustParse(*payload.SubcategoryID)
+		subcategoryUUID = &parsed
+	}
+
+	tx, err := s.db.BeginTx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	installmentID, err := s.installmentExpenseRepo.InsertWithTx(ctx, tx, userID, payload.Description)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert installment expense: %w", err)
+	}
+
+	arsPerInstallment := payload.ArsAmount / float64(payload.InstallmentMonths)
+	usdPerInstallment := payload.UsdAmount / float64(payload.InstallmentMonths)
+
+	expenseIDs := make([]uuid.UUID, payload.InstallmentMonths)
+	for i := 0; i < payload.InstallmentMonths; i++ {
+		targetYear := startDate.Year()
+		targetMonth := startDate.Month() + time.Month(i)
+
+		for targetMonth > 12 {
+			targetMonth -= 12
+			targetYear++
+		}
+
+		originalDay := startDate.Day()
+		lastDayOfMonth := time.Date(targetYear, targetMonth+1, 0, 0, 0, 0, 0, startDate.Location()).Day()
+
+		day := originalDay
+		if originalDay > lastDayOfMonth {
+			day = lastDayOfMonth
+		}
+
+		installmentDate := time.Date(targetYear, targetMonth, day, 0, 0, 0, 0, startDate.Location())
+
+		expense := &database.Expense{
+			UserID:          userID,
+			Description:     fmt.Sprintf("%s (%d/%d)", payload.Description, i+1, payload.InstallmentMonths),
+			PaymentMethodID: paymentMethodUUID,
+			ARSAmount:       arsPerInstallment,
+			USDAmount:       usdPerInstallment,
+			CategoryID:      categoryUUID,
+			SubcategoryID:   subcategoryUUID,
+			Date:            installmentDate,
+		}
+
+		id, err := s.expenseRepo.InsertWithTx(ctx, tx, expense, nil, &installmentID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to insert expense %d: %w", i+1, err)
+		}
+		expenseIDs[i] = id
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return expenseIDs, nil
 }
 

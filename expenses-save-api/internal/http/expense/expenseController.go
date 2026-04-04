@@ -50,6 +50,21 @@ func (c *ExpenseController) AddExpense(ctx fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ARS and USD have to be greater than 0"})
 	}
 
+	if payload.InstallmentMonths > 0 {
+		expenseIDs, err := c.expenseService.AddInstallmentExpense(ctx.Context(), userID, &payload)
+		if err != nil {
+			log.Error(err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		log.Info("Added installment expense")
+
+		return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
+			"installmentExpenseIds": expenseIDs,
+			"count":                 len(expenseIDs),
+		})
+	}
+
 	response, err := c.expenseService.AddExpense(ctx.Context(), userID, &payload)
 	if err != nil {
 		log.Error(err)
