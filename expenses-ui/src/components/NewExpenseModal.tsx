@@ -196,6 +196,7 @@ export function NewExpenseModal({
         paymentMethodId: recurrent.paymentMethodId,
         categoryId: recurrent.categoryId,
         subcategoryId: recurrent.subcategoryId ?? "",
+        installmentMonths: "",
       });
     }
   };
