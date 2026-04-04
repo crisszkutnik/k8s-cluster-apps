@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { ROUTES } from "../routes/routes";
 import { Home, CreditCard, Tag } from "lucide-react";
 import { NewExpenseModal } from "./NewExpenseModal";
+import { useExpenseModalStore } from "../lib/stores/expenseModalStore";
 
 interface NavItem {
   label: string;
@@ -21,6 +22,23 @@ const navItems: NavItem[] = [
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const location = useLocation();
+  const {
+    isOpen,
+    defaultRecurrentExpenseId,
+    defaultCategoryId,
+    defaultSubcategoryId,
+    onSuccess,
+    openModal,
+    closeModal,
+  } = useExpenseModalStore();
+
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      openModal();
+    } else {
+      closeModal();
+    }
+  };
 
   return (
     <aside className="flex flex-col w-64 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
@@ -54,7 +72,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         </ul>
       </nav>
       <div className="px-3 py-4 border-t border-sidebar-border">
-        <NewExpenseModal />
+        <NewExpenseModal
+          open={isOpen}
+          onOpenChange={handleOpenChange}
+          defaultRecurrentExpenseId={defaultRecurrentExpenseId}
+          defaultCategoryId={defaultCategoryId}
+          defaultSubcategoryId={defaultSubcategoryId}
+          onSuccess={onSuccess}
+        />
       </div>
     </aside>
   );

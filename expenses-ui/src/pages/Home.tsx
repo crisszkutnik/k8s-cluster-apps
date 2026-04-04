@@ -3,27 +3,33 @@ import { Card, Metric, Text } from "@tremor/react";
 import { useExpenseStore } from "../lib/stores/expenseStore";
 import { useCategoryStore } from "../lib/stores/categoryStore";
 import { usePaymentMethodStore } from "../lib/stores/paymentMethodStore";
+import { useRecurrentExpenseStore } from "../lib/stores/recurrentExpenseStore";
+import { useExpenseModalStore } from "../lib/stores/expenseModalStore";
 import { MonthPicker } from "../components/MonthPicker";
 import { YearPicker } from "../components/YearPicker";
 import { ExpensePieChart } from "../components/ExpensePieChart";
 import { ExpenseLineCharts } from "../components/ExpenseLineCharts";
 import { ExpenseTables } from "../components/ExpenseTables";
-import { categorizeExpenses } from "../lib/utils";
+import { MissingRecurrentExpensesWarning } from "../components/MissingRecurrentExpensesWarning";
+import { categorizeExpenses, findMissingRecurrentExpenses } from "../lib/utils";
 import { useRouter } from "@tanstack/react-router";
 import { useIsMobile } from "../hooks/use-mobile";
 import { loadExpenses, loadYearlyExpenses } from "../lib/service/expensesService";
+import type { RecurrentExpense } from "../lib/types";
 
 export function Home() {
   const router = useRouter();
   const expenses = useExpenseStore((state) => state.expenses);
   const categories = useCategoryStore((state) => state.categories);
   const paymentMethods = usePaymentMethodStore((state) => state.paymentMethods);
+  const recurrentExpenses = useRecurrentExpenseStore((state) => state.recurrentExpenses);
   const currentMonth = useExpenseStore((state) => state.currentMonth);
   const currentYear = useExpenseStore((state) => state.currentYear);
   const view = useExpenseStore((state) => state.view);
   const setExpenses = useExpenseStore((state) => state.setExpenses);
   const invalidateCache = useExpenseStore((state) => state.invalidateCache);
   const isMobile = useIsMobile();
+  const { openModal } = useExpenseModalStore();
 
   const handleExpenseChange = async () => {
     if (view === "monthly") {
@@ -41,6 +47,40 @@ export function Home() {
     () => categorizeExpenses(expenses),
     [expenses]
   );
+
+  const { periodStart, periodEnd } = useMemo(() => {
+    if (view === "monthly") {
+      const month = currentMonth || new Date().toISOString().slice(0, 7);
+      const [year, monthStr] = month.split("-");
+      const lastDay = new Date(parseInt(year), parseInt(monthStr), 0).getDate();
+      return {
+        periodStart: `${month}-01`,
+        periodEnd: `${month}-${String(lastDay).padStart(2, "0")}`,
+      };
+    } else {
+      const year = currentYear || String(new Date().getFullYear());
+      return {
+        periodStart: `${year}-01-01`,
+        periodEnd: `${year}-12-31`,
+      };
+    }
+  }, [view, currentMonth, currentYear]);
+
+  const missingRecurrentExpenses = useMemo(() => {
+    return findMissingRecurrentExpenses(
+      recurrentExpenses,
+      expenses,
+      periodStart,
+      periodEnd
+    );
+  }, [recurrentExpenses, expenses, periodStart, periodEnd]);
+
+  const handleAddMissingExpense = (recurrentExpense: RecurrentExpense) => {
+    openModal({
+      recurrentExpenseId: recurrentExpense.id,
+      onSuccess: handleExpenseChange,
+    });
+  };
 
   const handleViewChange = (newView: "monthly" | "yearly") => {
     if (newView === "monthly") {
@@ -113,6 +153,11 @@ export function Home() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
+      <MissingRecurrentExpensesWarning
+        missingExpenses={missingRecurrentExpenses}
+        onAddExpense={handleAddMissingExpense}
+      />
+
       <div className={`flex ${isMobile ? "flex-col gap-4" : "justify-between items-center"}`}>
         <div>
           <h1 className={`font-bold ${isMobile ? "text-2xl" : "text-3xl"}`}>Dashboard</h1>

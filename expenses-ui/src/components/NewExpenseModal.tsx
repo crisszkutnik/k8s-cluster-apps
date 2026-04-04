@@ -55,17 +55,26 @@ const buildInitialFormData = (defaultCategoryId?: string, defaultSubcategoryId?:
 interface NewExpenseModalProps {
   defaultCategoryId?: string;
   defaultSubcategoryId?: string;
+  defaultRecurrentExpenseId?: string;
   onSuccess?: () => void;
   compact?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function NewExpenseModal({
   defaultCategoryId,
   defaultSubcategoryId,
+  defaultRecurrentExpenseId,
   onSuccess,
   compact,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: NewExpenseModalProps = {}) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange ?? (() => {})) : setInternalOpen;
   const [formData, setFormData] = useState<ExpenseFormData>(() =>
     buildInitialFormData(defaultCategoryId, defaultSubcategoryId),
   );
@@ -109,8 +118,24 @@ export function NewExpenseModal({
       setFormData(buildInitialFormData(defaultCategoryId, defaultSubcategoryId));
       setSelectedRecurrentId("");
       setErrors({});
+    } else if (defaultRecurrentExpenseId) {
+      setSelectedRecurrentId(defaultRecurrentExpenseId);
+      setErrors({});
+
+      const recurrent = recurrentExpenses.find((r) => r.id === defaultRecurrentExpenseId);
+      if (recurrent) {
+        setFormData({
+          description: recurrent.description,
+          arsAmount: recurrent.arsAmount?.toString() ?? "",
+          usdAmount: recurrent.usdAmount?.toString() ?? "",
+          date: new Date().toISOString().split("T")[0],
+          paymentMethodId: recurrent.paymentMethodId,
+          categoryId: recurrent.categoryId,
+          subcategoryId: recurrent.subcategoryId ?? "",
+        });
+      }
     }
-  }, [open, defaultCategoryId, defaultSubcategoryId]);
+  }, [open, defaultCategoryId, defaultSubcategoryId, defaultRecurrentExpenseId, recurrentExpenses]);
 
   useEffect(() => {
     if (open && fxRate === 0) {
