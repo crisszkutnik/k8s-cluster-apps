@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
+import { useIsMobile } from "../hooks/use-mobile";
 
 interface YearPickerProps {
   currentYear: string; // "YYYY" format
@@ -9,6 +10,7 @@ interface YearPickerProps {
 
 export function YearPicker({ currentYear }: YearPickerProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
   // Parse current year
@@ -38,11 +40,11 @@ export function YearPicker({ currentYear }: YearPickerProps) {
   const years = Array.from({ length: 12 }, (_, i) => decadeStart + i - 1);
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <Button
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2"
+        className={`flex items-center gap-2 ${isMobile ? "w-full justify-center py-2.5" : ""}`}
       >
         <Calendar className="w-4 h-4" />
         <span className="font-semibold">{currentYear}</span>
@@ -52,10 +54,10 @@ export function YearPicker({ currentYear }: YearPickerProps) {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/50"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-72 bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-lg shadow-2xl z-50 p-4">
+          <div className={`${isMobile ? "fixed inset-x-4 top-1/2 -translate-y-1/2" : "absolute right-0 mt-2"} w-${isMobile ? "auto" : "72"} bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-lg shadow-2xl z-50 p-4`}>
             {/* Decade Navigation */}
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-700/50">
               <Button
@@ -90,12 +92,12 @@ export function YearPicker({ currentYear }: YearPickerProps) {
                   <button
                     key={yearValue}
                     onClick={() => handleYearSelect(yearValue)}
-                    className={`py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                    className={`${isMobile ? "py-3" : "py-2"} px-3 rounded-md text-sm font-medium transition-all ${
                       isCurrentYear
                         ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-500/50"
                         : isOutOfRange
                         ? "bg-slate-950 text-gray-500 cursor-default"
-                        : "bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white hover:scale-105"
+                        : "bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white hover:scale-105 active:scale-95"
                     }`}
                   >
                     {yearValue}
