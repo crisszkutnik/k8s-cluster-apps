@@ -67,61 +67,68 @@ export function MonthPicker({ currentMonth }: MonthPickerProps) {
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-lg shadow-lg z-50 p-4">
-          {/* Year Navigation */}
-          <div className="flex items-center justify-between mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousYear}
-              className="p-2 h-8 w-8"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="text-lg font-semibold">{pickerYear}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextYear}
-              className="p-2 h-8 w-8"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Month Grid */}
-          <div className="grid grid-cols-3 gap-2">
-            {months.map((monthName, index) => {
-              const isCurrentMonth =
-                pickerYear === currentDate.getFullYear() &&
-                index === parseInt(month) - 1;
-
-              return (
-                <button
-                  key={monthName}
-                  onClick={() => handleMonthSelect(index)}
-                  className={`py-2 px-3 rounded text-sm font-medium transition-colors ${
-                    isCurrentMonth
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-800 hover:bg-slate-700 text-gray-300"
-                  }`}
-                >
-                  {monthName.slice(0, 3)}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Close button */}
-          <Button
-            variant="outline"
-            size="sm"
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
-            className="w-full mt-4"
-          >
-            Close
-          </Button>
-        </div>
+          />
+          <div className="absolute right-0 mt-2 w-72 bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-lg shadow-2xl z-50 p-4">
+            {/* Year Navigation */}
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-700/50">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousYear}
+                className="p-2 h-8 w-8 hover:bg-blue-600 hover:border-blue-600 transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-lg font-semibold text-white">{pickerYear}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextYear}
+                className="p-2 h-8 w-8 hover:bg-blue-600 hover:border-blue-600 transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Month Grid */}
+            <div className="grid grid-cols-3 gap-2">
+              {months.map((monthName, index) => {
+                const isCurrentMonth =
+                  pickerYear === currentDate.getFullYear() &&
+                  index === parseInt(month) - 1;
+
+                return (
+                  <button
+                    key={monthName}
+                    onClick={() => handleMonthSelect(index)}
+                    className={`py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      isCurrentMonth
+                        ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-500/50"
+                        : "bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white hover:scale-105"
+                    }`}
+                  >
+                    {monthName.slice(0, 3)}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Close button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsOpen(false)}
+              className="w-full mt-4 hover:bg-slate-700"
+            >
+              Close
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );

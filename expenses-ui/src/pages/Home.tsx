@@ -160,30 +160,32 @@ export function Home() {
 
       <div className={`flex ${isMobile ? "flex-col gap-4" : "justify-between items-center"}`}>
         <div>
-          <h1 className={`font-bold ${isMobile ? "text-2xl" : "text-3xl"}`}>Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your expenses</p>
+          <h1 className={`font-bold ${isMobile ? "text-2xl" : "text-3xl"} bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent`}>
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground text-sm">Track and analyze your expenses</p>
         </div>
         <div className={`flex gap-4 ${isMobile ? "flex-col w-full" : "items-center"}`}>
-          <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-1">
+          <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-1 shadow-lg">
             <button
               onClick={() => handleViewChange("monthly")}
-              className={`${isMobile ? "flex-1" : ""} px-4 py-2 rounded text-sm font-medium transition-colors ${
+              className={`${isMobile ? "flex-1" : ""} px-4 py-2 rounded text-sm font-medium transition-all ${
                 view === "monthly"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "text-gray-400 hover:text-white hover:bg-slate-800"
               }`}
             >
-              Monthly analysis
+              Monthly
             </button>
             <button
               onClick={() => handleViewChange("yearly")}
-              className={`${isMobile ? "flex-1" : ""} px-4 py-2 rounded text-sm font-medium transition-colors ${
+              className={`${isMobile ? "flex-1" : ""} px-4 py-2 rounded text-sm font-medium transition-all ${
                 view === "yearly"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "text-gray-400 hover:text-white hover:bg-slate-800"
               }`}
             >
-              Yearly analysis
+              Yearly
             </button>
           </div>
 
@@ -195,31 +197,36 @@ export function Home() {
         </div>
       </div>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+
       <div>
-        <h2 className="text-lg font-semibold mb-4">ARS</h2>
         <div className={isMobile ? "overflow-x-auto -mx-4 px-4" : ""}>
           <div className={`${isMobile ? "flex gap-4 min-w-max" : "grid grid-cols-4 gap-4"}`}>
-            <Card className={`bg-slate-800 border border-slate-700 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
-              <Text className="text-gray-400">ARS total</Text>
-              <Metric className="text-white">
+            <Card className={`bg-slate-800 border-2 border-blue-600/50 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
+              <Text className="text-gray-400 text-xs font-medium uppercase tracking-wider">Total</Text>
+              <Metric className="text-white flex items-baseline gap-1.5">
+                <span className="text-blue-400 text-base font-semibold">ARS</span>
                 {arsTotal.toLocaleString("es-AR")}
               </Metric>
             </Card>
             <Card className={`bg-slate-800 border border-slate-700 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
-              <Text className="text-gray-400">ARS Mes</Text>
-              <Metric className="text-white">
+              <Text className="text-gray-500 text-xs font-medium uppercase tracking-wider">Monthly</Text>
+              <Metric className="text-white flex items-baseline gap-1.5">
+                <span className="text-blue-400 text-base font-semibold">ARS</span>
                 {arsMes.toLocaleString("es-AR")}
               </Metric>
             </Card>
             <Card className={`bg-slate-800 border border-slate-700 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
-              <Text className="text-gray-400">ARS Cuotas</Text>
-              <Metric className="text-white">
+              <Text className="text-gray-500 text-xs font-medium uppercase tracking-wider">Installments</Text>
+              <Metric className="text-white flex items-baseline gap-1.5">
+                <span className="text-blue-400 text-base font-semibold">ARS</span>
                 {arsCuotas.toLocaleString("es-AR")}
               </Metric>
             </Card>
             <Card className={`bg-slate-800 border border-slate-700 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
-              <Text className="text-gray-400">ARS Fijos</Text>
-              <Metric className="text-white">
+              <Text className="text-gray-500 text-xs font-medium uppercase tracking-wider">Fixed</Text>
+              <Metric className="text-white flex items-baseline gap-1.5">
+                <span className="text-blue-400 text-base font-semibold">ARS</span>
                 {arsFijos.toLocaleString("es-AR")}
               </Metric>
             </Card>
@@ -228,42 +235,41 @@ export function Home() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-4">USD</h2>
         <div className={isMobile ? "overflow-x-auto -mx-4 px-4" : ""}>
           <div className={`${isMobile ? "flex gap-4 min-w-max" : "grid grid-cols-4 gap-4"}`}>
-            <Card className={`bg-slate-800 border border-slate-700 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
-              <Text className="text-gray-400">USD Total</Text>
-              <Metric className="text-white">
-                {parseFloat(usdTotal.toFixed(2)).toLocaleString("en-US")}
+            <Card className={`bg-slate-800 border-2 border-emerald-600/50 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
+              <Text className="text-gray-400 text-xs font-medium uppercase tracking-wider">Total</Text>
+              <Metric className="text-white flex items-baseline gap-1.5">
+                <span className="text-emerald-400 text-base font-semibold">USD</span>
+                {usdTotal.toFixed(2)}
               </Metric>
             </Card>
             <Card className={`bg-slate-800 border border-slate-700 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
-              <Text className="text-gray-400">USD Mes</Text>
-              <Metric className="text-white">
-                {typeof usdMes === "number"
-                  ? usdMes.toLocaleString("en-US")
-                  : parseFloat(usdMes).toLocaleString("en-US")}
+              <Text className="text-gray-500 text-xs font-medium uppercase tracking-wider">Monthly</Text>
+              <Metric className="text-white flex items-baseline gap-1.5">
+                <span className="text-emerald-400 text-base font-semibold">USD</span>
+                {usdMes.toFixed(2)}
               </Metric>
             </Card>
             <Card className={`bg-slate-800 border border-slate-700 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
-              <Text className="text-gray-400">USD Cuotas</Text>
-              <Metric className="text-white">
-                {typeof usdCuotas === "number"
-                  ? usdCuotas.toLocaleString("en-US")
-                  : parseFloat(usdCuotas).toLocaleString("en-US")}
+              <Text className="text-gray-500 text-xs font-medium uppercase tracking-wider">Installments</Text>
+              <Metric className="text-white flex items-baseline gap-1.5">
+                <span className="text-emerald-400 text-base font-semibold">USD</span>
+                {usdCuotas.toFixed(2)}
               </Metric>
             </Card>
             <Card className={`bg-slate-800 border border-slate-700 rounded-lg ${isMobile ? "min-w-[200px]" : ""}`}>
-              <Text className="text-gray-400">USD Fijos</Text>
-              <Metric className="text-white">
-                {typeof usdFijos === "number"
-                  ? usdFijos.toLocaleString("en-US")
-                  : parseFloat(usdFijos).toLocaleString("en-US")}
+              <Text className="text-gray-500 text-xs font-medium uppercase tracking-wider">Fixed</Text>
+              <Metric className="text-white flex items-baseline gap-1.5">
+                <span className="text-emerald-400 text-base font-semibold">USD</span>
+                {usdFijos.toFixed(2)}
               </Metric>
             </Card>
           </div>
         </div>
       </div>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
 
       {view === "yearly" ? (
         <>
@@ -275,6 +281,8 @@ export function Home() {
           <ExpensePieChart expenses={expenses} categories={categories} />
         </>
       )}
+
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
 
       <ExpenseTables
         expenses={expenses}
