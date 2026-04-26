@@ -9,6 +9,7 @@ const homeSearchSchema = z.object({
   month: z.string().optional().catch(undefined),
   year: z.coerce.number().optional().catch(undefined),
   view: z.enum(["monthly", "yearly"]).optional().catch(undefined),
+  excludedCategories: z.string().optional().catch(undefined),
 });
 
 type HomeSearch = z.infer<typeof homeSearchSchema>;
@@ -18,10 +19,20 @@ export const Route = createFileRoute(ROUTES.HOME)({
     return homeSearchSchema.parse(search);
   },
   beforeLoad: async ({ search }) => {
-    const { month, year, view } = search as HomeSearch;
-    
+    const { month, year, view, excludedCategories } = search as HomeSearch;
+
     // Determine the view (default to monthly)
     const currentView = view || "monthly";
+
+    // Parse excluded categories from URL param
+    const excludedCategoryIds = excludedCategories
+      ? excludedCategories.split(",").filter(Boolean)
+      : [];
+
+    // Update filters in store
+    useExpenseStore.getState().setFilters({
+      excludedCategories: excludedCategoryIds,
+    });
     
     if (currentView === "yearly") {
       // Get current year if not provided

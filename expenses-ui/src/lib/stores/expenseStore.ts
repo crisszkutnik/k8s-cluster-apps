@@ -7,12 +7,17 @@ interface ExpenseCache {
   byCategory: { [categoryId: string]: Expense[] };
 }
 
+interface ExpenseFilters {
+  excludedCategories: string[];
+}
+
 interface ExpenseStoreState {
   expenses: Expense[];
   cache: ExpenseCache;
   currentMonth: string; // "YYYY-MM" format
   currentYear: string; // "YYYY" format
   view: "monthly" | "yearly";
+  filters: ExpenseFilters;
   setExpenses: (
     newExpenses: Expense[],
     period: string,
@@ -28,6 +33,8 @@ interface ExpenseStoreState {
   setCategoryExpenses: (categoryId: string, newExpenses: Expense[]) => void;
   getCategoryExpenses: (categoryId: string) => Expense[];
   invalidateCategoryCache: (categoryId: string) => void;
+  setFilters: (filters: Partial<ExpenseFilters>) => void;
+  getFilteredExpenses: () => Expense[];
 }
 
 export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
@@ -40,6 +47,9 @@ export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
   currentMonth: "",
   currentYear: "",
   view: "monthly",
+  filters: {
+    excludedCategories: [],
+  },
 
   setExpenses: (
     newExpenses: Expense[],
@@ -159,5 +169,28 @@ export const useExpenseStore = create<ExpenseStoreState>((set, get) => ({
         },
       };
     });
+  },
+
+  setFilters: (filters: Partial<ExpenseFilters>) => {
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        ...filters,
+      },
+    }));
+  },
+
+  getFilteredExpenses: () => {
+    const { expenses, filters } = get();
+
+    let filtered = expenses;
+
+    if (filters.excludedCategories.length > 0) {
+      filtered = filtered.filter(
+        (expense) => !filters.excludedCategories.includes(expense.categoryId)
+      );
+    }
+
+    return filtered;
   },
 }));

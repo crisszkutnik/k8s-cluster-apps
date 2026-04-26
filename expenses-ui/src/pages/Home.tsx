@@ -7,6 +7,7 @@ import { useRecurrentExpenseStore } from "../lib/stores/recurrentExpenseStore";
 import { useExpenseModalStore } from "../lib/stores/expenseModalStore";
 import { MonthPicker } from "../components/MonthPicker";
 import { YearPicker } from "../components/YearPicker";
+import { CategoryFilterDropdown } from "../components/CategoryFilterDropdown";
 import { ExpensePieChart } from "../components/ExpensePieChart";
 import { ExpenseLineCharts } from "../components/ExpenseLineCharts";
 import { ExpenseTables } from "../components/ExpenseTables";
@@ -20,6 +21,8 @@ import type { RecurrentExpense } from "../lib/types";
 export function Home() {
   const router = useRouter();
   const expenses = useExpenseStore((state) => state.expenses);
+  const getFilteredExpenses = useExpenseStore((state) => state.getFilteredExpenses);
+  const excludedCategories = useExpenseStore((state) => state.filters.excludedCategories);
   const categories = useCategoryStore((state) => state.categories);
   const paymentMethods = usePaymentMethodStore((state) => state.paymentMethods);
   const recurrentExpenses = useRecurrentExpenseStore((state) => state.recurrentExpenses);
@@ -30,6 +33,8 @@ export function Home() {
   const invalidateCache = useExpenseStore((state) => state.invalidateCache);
   const isMobile = useIsMobile();
   const { openModal } = useExpenseModalStore();
+
+  const filteredExpenses = useMemo(() => getFilteredExpenses(), [expenses, excludedCategories, getFilteredExpenses]);
 
   const handleExpenseChange = async () => {
     if (view === "monthly") {
@@ -44,8 +49,8 @@ export function Home() {
   };
 
   const { monthly, installments, recurrent } = useMemo(
-    () => categorizeExpenses(expenses),
-    [expenses]
+    () => categorizeExpenses(filteredExpenses),
+    [filteredExpenses]
   );
 
   const { periodStart, periodEnd } = useMemo(() => {
@@ -108,8 +113,8 @@ export function Home() {
   };
 
   const arsTotal = useMemo(() => {
-    return expenses.reduce((sum, expense) => sum + (expense.arsAmount || 0), 0);
-  }, [expenses]);
+    return filteredExpenses.reduce((sum, expense) => sum + (expense.arsAmount || 0), 0);
+  }, [filteredExpenses]);
 
   const arsMes = useMemo(() => {
     return monthly.reduce((sum, expense) => sum + (expense.arsAmount || 0), 0);
@@ -130,8 +135,8 @@ export function Home() {
   }, [recurrent]);
 
   const usdTotal = useMemo(() => {
-    return expenses.reduce((sum, expense) => sum + (expense.usdAmount || 0), 0);
-  }, [expenses]);
+    return filteredExpenses.reduce((sum, expense) => sum + (expense.usdAmount || 0), 0);
+  }, [filteredExpenses]);
 
   const usdMes = useMemo(() => {
     return monthly.reduce((sum, expense) => sum + (expense.usdAmount || 0), 0);
@@ -194,6 +199,10 @@ export function Home() {
           ) : (
             <YearPicker currentYear={currentYear} />
           )}
+          <CategoryFilterDropdown
+            categories={categories}
+            excludedCategoryIds={excludedCategories}
+          />
         </div>
       </div>
 
@@ -269,19 +278,19 @@ export function Home() {
 
       {view === "yearly" ? (
         <>
-          <ExpenseLineCharts expenses={expenses} categories={categories} />
-          <ExpensePieChart expenses={expenses} categories={categories} />
+          <ExpenseLineCharts expenses={filteredExpenses} categories={categories} />
+          <ExpensePieChart expenses={filteredExpenses} categories={categories} />
         </>
       ) : (
         <>
-          <ExpensePieChart expenses={expenses} categories={categories} />
+          <ExpensePieChart expenses={filteredExpenses} categories={categories} />
         </>
       )}
 
       <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
 
       <ExpenseTables
-        expenses={expenses}
+        expenses={filteredExpenses}
         categories={categories}
         paymentMethods={paymentMethods}
         onExpenseUpdated={handleExpenseChange}
