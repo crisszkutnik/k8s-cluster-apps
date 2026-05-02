@@ -15,7 +15,7 @@ RUN go build -o /app/dist/expenses-save-api /app/cmd/expenses-save-api/main.go
 
 RUN go clean -modcache -cache
 
-FROM alpine:3.20
+FROM alpine:3.23
 
 WORKDIR /app
 
