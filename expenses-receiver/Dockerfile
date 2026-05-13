@@ -1,4 +1,4 @@
-FROM node:22.14-slim AS base
+FROM node:22.22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -14,7 +14,7 @@ RUN pnpm run build
 
 
 # Build final runtime image
-FROM node:22.14-slim AS runtime
+FROM node:22.22-slim AS runtime
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
