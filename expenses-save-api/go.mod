@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/gofiber/fiber/v3 v3.0.0-rc.3
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.7.4
+	github.com/jackc/pgx/v5 v5.7.6
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/oauth2 v0.28.0
 	google.golang.org/api v0.224.0
